@@ -1,0 +1,46 @@
+############################
+# 1. Virtual Environment
+############################
+venv/
+ENV/
+env/
+.env/
+.venv/
+
+############################
+# 2. Django
+############################
+media/               # User-uploaded files
+staticfiles/         # Collectstatic output
+*.log                # Log files
+__pycache__/
+*.py[cod]
+
+# SQLite 
+db.sqlite3
+db.sqlite3-journal
+
+############################
+# 3. Environment Variables
+############################
+.env
+.env.*
+
+############################
+# 4. VSCode / Cursor
+############################
+.vscode/
+.idea/
+
+############################
+# 5. Node Projects 
+############################
+node_modules/
+dist/
+build/
+
+############################
+# 6. OS files
+############################
+.DS_Store
+Thumbs.db
