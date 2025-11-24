@@ -1,0 +1,30 @@
+POST http://127.0.0.1:8000/api/auth/register/
+Content-Type: application/json
+
+{
+  "username": "Jamol",
+  "email": "jamol@gmail.com",
+  "password": "montella",
+  "password_confirm": "montella",
+  "first_name": "Jamol",
+  "last_name": "Aliyev",
+  "user_type": "passenger",
+  "phone_number": "+998983235433"
+}
+
+###
+
+POST http://127.0.0.1:8000/api/auth/login/
+Content-Type: application/json
+
+{
+  "username": "Jamol",
+  "password": "montella"
+}
+
+###
+
+GET http://127.0.0.1:8000/api/auth/profile/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzOTY0NzQ3LCJpYXQiOjE3NjM5NjIwNDcsImp0aSI6ImZhNjJlNGU3NjE2NjRjYTE5NjRjNTE0NzA1MDdhYTIwIiwidXNlcl9pZCI6IjcifQ.Ydrv5uWJZ0KSLft1DT-DyBbppJZnmzBuGETwBjgMFm0
+
