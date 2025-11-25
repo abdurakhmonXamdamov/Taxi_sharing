@@ -10,7 +10,7 @@ class Ride(models.Model):
       ('cancelled', 'Cancelled')
   )
 
-  RIDE_TYPE_CHOCES = (
+  RIDE_TYPE_CHOICES = (
     ('solo', 'Solo Ride'),
     ('shared', 'Shared Ride')
   )
@@ -26,7 +26,7 @@ class Ride(models.Model):
   dropoff_longitude = models.DecimalField(max_digits=9, decimal_places=6)
   dropoff_address = models.TextField()
 
-  ride_type = models.CharField(max_length=10, choices=RIDE_TYPE_CHOCES, default='sole')
+  ride_type = models.CharField(max_length=10, choices=RIDE_TYPE_CHOICES, default='solo')
   status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
   distance = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
   duration = models.IntegerField(null=True, blank=True)
