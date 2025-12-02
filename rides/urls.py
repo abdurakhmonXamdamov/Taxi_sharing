@@ -1,11 +1,12 @@
 from django.urls import path
 from .views import (
     RideCreateView, RideListView, RideDetailView,
-    RideAcceptView, RideStatusUpdateView, RideRatingView, ActiveRideView
+    RideAcceptView, RideStatusUpdateView, RideRatingView, ActiveRideView, home
 )
 
 urlpatterns = [
     path('', RideListView.as_view(), name='ride-list'),
+    path('home/', home, name='home'),
     path('create/', RideCreateView.as_view(), name='ride-create'),
     path('<int:pk>/', RideDetailView.as_view(), name='ride-detail'),
     path('<int:ride_id>/accept/', RideAcceptView.as_view(), name='ride-accept'),

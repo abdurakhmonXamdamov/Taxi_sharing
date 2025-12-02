@@ -37,6 +37,17 @@ class Driver(models.Model):
     ('offline', 'Offline'),
   )
 
+  @property
+  def is_profile_complete(self):
+    """Check if driver completed their profile"""
+    return bool(
+        self.license_number and
+        self.vehicle_type and
+        self.vehicle_model and
+        self.vehicle_number and
+        self.vehicle_color
+    )
+
   user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='driver_profile')
   vehicle_type = models.CharField(max_length=50)
   vehicle_model = models.CharField(max_length=50)

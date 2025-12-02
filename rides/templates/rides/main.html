@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <button onclick="sendLocation()">Send Location</button>
+    <div id="messages"></div>
+
+    <script>
+        // Connect to WebSocket
+        const socket = new WebSocket('ws://127.0.0.1:8000/ws/location/');
+
+        socket.onopen = function(e) {
+            console.log('Connected to WebSocket');
+            document.getElementById('messages').innerHTML += '<p>Connected!</p>';
+        };
+
+        socket.onmessage = function(event) {
+            console.log('Message from server:', event.data);
+            const data = JSON.parse(event.data);
+            document.getElementById('messages').innerHTML += 
+                `<p>Driver ${data.driver_id} at ${data.latitude}, ${data.longitude}</p>`;
+        };
+
+        socket.onclose = function(event) {
+            console.log('Disconnected from WebSocket');
+        };
+
+        function sendLocation() {
+            // Simulate driver sending location
+            socket.send(JSON.stringify({
+                type: 'location_update',
+                driver_id: 2,
+                latitude: 41.299500,
+                longitude: 69.240100
+            }));
+        }
+    </script>
+</body>
+</html>

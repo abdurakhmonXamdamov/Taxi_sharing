@@ -2,18 +2,27 @@ from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter #? API
 from django.utils import timezone
 from .models import Ride
 from .serializers import (
     RideSerializer, RideCreateSerializer, 
     RideStatusUpdateSerializer, RideRatingSerializer
 )
+from django.shortcuts import render
+
+def home(request):
+    return render(request, 'rides/main.html')
 
 class RideCreateView(generics.CreateAPIView):
     """Book a new ride"""
     serializer_class = RideCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    @extend_schema(
+        description="Create a new ride booking",
+        responses={201: RideSerializer}
+    )
     def perform_create(self, serializer):
         ride = serializer.save()
         # TODO: Trigger notification to nearby drivers
@@ -24,6 +33,9 @@ class RideListView(generics.ListAPIView):
     serializer_class = RideSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    @extend_schema(
+        description="Get list of rides (passenger sees their bookings, driver sees assigned rides)"
+    )
     def get_queryset(self):
         user = self.request.user
         if user.user_type == 'driver':
@@ -37,9 +49,29 @@ class RideDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Ride.objects.all()
 
+    @extend_schema(
+        description="Get details of a specific ride"
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
 class RideAcceptView(APIView):
     """Driver accepts ride"""
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=None, 
+        responses={200: RideSerializer},
+        description="Driver accepts a pending ride request",
+        parameters=[
+            OpenApiParameter(
+                name='ride_id',
+                type=int,
+                location=OpenApiParameter.PATH,
+                description='Ride ID to accept'
+            )
+        ]
+    )
     
     def post(self, request, ride_id):
         if request.user.user_type != 'driver':
@@ -66,6 +98,20 @@ class RideStatusUpdateView(APIView):
     """Update ride status"""
     permission_classes = [permissions.IsAuthenticated]
     
+    @extend_schema(
+        request=RideStatusUpdateSerializer,
+        responses={200: RideSerializer},
+        description="Update ride status (picked_up, completed, cancelled)",
+        parameters=[
+            OpenApiParameter(
+                name='ride_id',
+                type=int,
+                location=OpenApiParameter.PATH,
+                description='Ride ID to update'
+            )
+        ]
+    )
+
     def patch(self, request, ride_id):
         ride = get_object_or_404(Ride, id=ride_id)
         
@@ -101,6 +147,20 @@ class RideRatingView(APIView):
     """Rate a completed ride"""
     permission_classes = [permissions.IsAuthenticated]
     
+    @extend_schema(
+        request=RideRatingSerializer,
+        responses={200: RideSerializer},
+        description="Rate a completed ride (1-5 stars)",
+        parameters=[
+            OpenApiParameter(
+                name='ride_id',
+                type=int,
+                location=OpenApiParameter.PATH,
+                description='Ride ID to rate'
+            )
+        ]
+    )
+
     def post(self, request, ride_id):
         ride = get_object_or_404(Ride, id=ride_id, status='completed')
         
@@ -139,6 +199,11 @@ class RideRatingView(APIView):
 class ActiveRideView(APIView):
     """Get user's current active ride"""
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={200: RideSerializer},
+        description="Get currently active ride for user"
+    )
     
     def get(self, request):
         user = request.user

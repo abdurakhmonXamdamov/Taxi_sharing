@@ -6,10 +6,16 @@ from django.utils import timezone
 from .models import Payment, DriverEarnings
 from rides.models import Ride
 from .serializers import PaymentSerializer, PaymentCreateSerializer, DriverEarningsSerializer
+from drf_spectacular.utils import extend_schema
 
 class PaymentCreateView(APIView):
     """Process payment for a ride"""
     permission_classes = [permissions.IsAuthenticated]
+    @extend_schema(
+        request=PaymentCreateSerializer,
+        responses={200: PaymentSerializer},
+        description="Process payment for a completed ride"
+    )
     
     def post(self, request):
         serializer = PaymentCreateSerializer(data=request.data)
@@ -48,6 +54,10 @@ class PaymentListView(generics.ListAPIView):
     """Get user's payment history"""
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        description="Get payment history (passenger sees payments made, driver sees payments received)"
+    )
     
     def get_queryset(self):
         user = self.request.user
@@ -58,6 +68,11 @@ class PaymentListView(generics.ListAPIView):
 class DriverEarningsView(APIView):
     """Get driver's earnings"""
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={200: DriverEarningsSerializer(many=True)},
+        description="Get driver's daily earnings (last 30 days)"
+    )
     
     def get(self, request):
         if request.user.user_type != 'driver':

@@ -10,8 +10,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     """User registration"""
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirm = serializers.CharField(write_only=True)
+    password = serializers.CharField(
+        write_only=True, 
+        min_length=8,
+        style={'input_type': 'password'},
+        help_text="Password (minimum 8 characters)"
+        )
+    password_confirm = serializers.CharField(
+        write_only=True,
+        style={'input_type': 'password'},
+        help_text="Confirm password"
+    )
     
     class Meta:
         model = User
@@ -37,7 +46,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     """User login"""
     username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(
+        required=True,
+        write_only=True,
+        style={'input_type': 'password'},
+        help_text="Your password"
+    )
     
     def validate(self, data):
         user = authenticate(**data)
@@ -48,6 +62,7 @@ class LoginSerializer(serializers.Serializer):
 class DriverSerializer(serializers.ModelSerializer):
     """Driver profile details"""
     user = UserSerializer(read_only=True)
+    is_profile_complete = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Driver
@@ -68,3 +83,23 @@ class DriverLocationUpdateSerializer(serializers.Serializer):
     latitude = serializers.DecimalField(max_digits=9, decimal_places=6)
     longitude = serializers.DecimalField(max_digits=9, decimal_places=6)
     status = serializers.ChoiceField(choices=['available', 'on_trip', 'offline'], required=False)
+
+class NearbyDriversSerializer(serializers.Serializer):
+    """Search for nearby drivers"""
+    latitude = serializers.DecimalField(
+        max_digits=9, 
+        decimal_places=6,
+        help_text="Your current latitude (e.g., 41.299500)"
+    )
+    longitude = serializers.DecimalField(
+        max_digits=9, 
+        decimal_places=6,
+        help_text="Your current longitude (e.g., 69.240100)"
+    )
+    radius = serializers.IntegerField(
+        default=5,
+        required=False,
+        min_value=1,
+        max_value=50,
+        help_text="Search radius in kilometers (1-50 km, default: 5km)"
+    )
