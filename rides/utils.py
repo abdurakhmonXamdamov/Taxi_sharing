@@ -18,7 +18,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 def calculate_fare(distance, ride_type='solo'):
     """Calculate ride fare"""     
     BASE_FARE = 5000  # 5000 UZS base fare
-    PER_KM = 2000     # 2000 UZS per km
+    PER_KM = 3000     # 3000 UZS per km
     
     fare = BASE_FARE + (distance * PER_KM)
     

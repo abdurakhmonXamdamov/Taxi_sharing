@@ -4,13 +4,16 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiExample #* for api 
 from django.contrib.auth import get_user_model
-from .models import Driver
+from .models import Driver, Passanger
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserSerializer,
     DriverSerializer,
     DriverLocationUpdateSerializer,
-    NearbyDriversSerializer
+    NearbyDriversSerializer,
+    DriverProfileCompleteSerializer, PassengerSerializer
 )
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 User = get_user_model()
 
@@ -94,6 +97,70 @@ class UserProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+class CompleteDriverProfileView(APIView):
+    """Complete driver profile - first time setup"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        request=DriverProfileCompleteSerializer,
+        responses={200: DriverSerializer},
+        description="Complete driver profile with all required vehicle information",
+        examples=[
+            OpenApiExample(
+                'Complete Profile Example',
+                value={
+                    "license_number": "AA1234567",
+                    "vehicle_type": "Sedan",
+                    "vehicle_model": "Chevrolet Nexia",
+                    "vehicle_number": "01 A 234 BC",
+                    "vehicle_color": "White"
+                },
+                request_only=True,
+            )
+        ]
+    )
+    def post(self, request):
+        if request.user.user_type != 'driver':
+            return Response(
+                {'error': 'Only drivers can complete profile'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            driver = request.user.driver_profile
+            
+            # Check if already complete
+            if driver.is_profile_complete:
+                return Response(
+                    {
+                        'message': 'Profile already complete',
+                        'profile': DriverSerializer(driver).data
+                    },
+                    status=status.HTTP_200_OK
+                )
+            
+            # Validate input
+            serializer = DriverProfileCompleteSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Update driver profile
+            driver.license_number = serializer.validated_data['license_number']
+            driver.vehicle_type = serializer.validated_data['vehicle_type']
+            driver.vehicle_model = serializer.validated_data['vehicle_model']
+            driver.vehicle_number = serializer.validated_data['vehicle_number']
+            driver.vehicle_color = serializer.validated_data['vehicle_color']
+            driver.save()
+            
+            return Response({
+                'message': 'Profile completed successfully! You can now go online.',
+                'profile': DriverSerializer(driver).data
+            }, status=status.HTTP_200_OK)
+            
+        except Driver.DoesNotExist:
+            return Response(
+                {'error': 'Driver profile not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 class DriverProfileView(APIView):
     """Get/Update driver profile"""
     permission_classes = [permissions.IsAuthenticated]
@@ -107,7 +174,11 @@ class DriverProfileView(APIView):
         try:
             profile = request.user.driver_profile
             serializer = DriverSerializer(profile)
-            return Response(serializer.data)
+
+            data = serializer.data
+            data['is_complete'] = profile.is_profile_complete
+            data['missing_fields'] = profile.missing_fields
+            return Response(data)
         except Driver.DoesNotExist:
             return Response({'error': 'Driver profile not found'}, 
                     status=status.HTTP_404_NOT_FOUND)
@@ -123,7 +194,7 @@ class DriverProfileView(APIView):
                 value={
                     "license_number": "AA1234567",
                     "vehicle_type": "Sedan",
-                    "vehicle_model": "Chevrolet Nexia",
+                    "vehicle_model": "Chevrolet Tracker",
                     "vehicle_number": "01 A 234 BC",
                     "vehicle_color": "White"
                 },
@@ -137,7 +208,12 @@ class DriverProfileView(APIView):
             serializer = DriverSerializer(profile, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data)
+
+            data = serializer.data
+            data['is_complete'] = profile.is_profile_complete
+            data['missing_fields'] = profile.missing_fields
+
+            return Response(data)
         except Driver.DoesNotExist:
             return Response({'error': 'Driver profile not found'}, 
                     status=status.HTTP_404_NOT_FOUND)
@@ -172,10 +248,37 @@ class DriverLocationUpdateView(APIView):
         
         if 'status' in serializer.validated_data:
             driver_profile.status = serializer.validated_data['status']
-        
+            
         driver_profile.save()
         
+        # ✅ ADD THIS: Broadcast location to all passengers
+        self.broadcast_location(driver_profile)
+
         return Response(DriverSerializer(driver_profile).data)
+
+    def broadcast_location(self, driver_profile):
+        """Broadcast driver location via WebSocket"""
+        try:
+            channel_layer = get_channel_layer()
+            
+            # Send to all users in location_updates room
+            async_to_sync(channel_layer.group_send)(
+                'location_updates',  # All passengers subscribed to this
+                {
+                    'type': 'location_broadcast',
+                    'driver_id': driver_profile.user.id,
+                    'latitude': str(driver_profile.current_latitude),
+                    'longitude': str(driver_profile.current_longitude),
+                    'status': driver_profile.status,
+                    'vehicle_type': driver_profile.vehicle_type,
+                    'vehicle_model': driver_profile.vehicle_model,
+                }
+            )
+            
+            print(f"📍 Broadcasted location for driver {driver_profile.user.username}")
+            
+        except Exception as e:
+            print(f"❌ Error broadcasting location: {e}")
 class NearbyDriversView(APIView):
     """Find nearby available drivers"""
     permission_classes = [permissions.IsAuthenticated]
@@ -226,3 +329,102 @@ class NearbyDriversView(APIView):
         } for item in nearby]
         
         return Response(result)
+
+class PassengerProfileView(APIView):
+    """Get/Update passenger profile"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        responses={200: PassengerSerializer},
+        description="Get passenger profile with ride statistics"
+    )
+    def get(self, request):
+        if request.user.user_type != 'passenger':
+            return Response(
+                {'error': 'Only passengers can access this'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            profile = request.user.passenger_profile
+            serializer = PassengerSerializer(profile)
+            return Response(serializer.data)
+        except:
+            return Response(
+                {'error': 'Passenger profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @extend_schema(
+        request=PassengerSerializer,
+        responses={200: PassengerSerializer},
+        description="Update passenger profile (partial updates allowed)",
+        examples=[
+            OpenApiExample(
+                'Update Passenger Preferences',
+                value={
+                    "username": "Cho'm bola",
+                    "user_type": "passenger, driver",
+                    "phone_number": "+998901234567"
+                },
+                request_only=True,
+            )
+        ]
+    )
+    def put(self, request):
+        if request.user.user_type != 'passenger':
+            return Response(
+                {'error': 'Only passengers can access this'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            profile = request.user.passenger_profile
+            serializer = PassengerSerializer(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        except:
+            return Response(
+                {'error': 'Passenger profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+class DriverCurrentLocationView(APIView):
+    """Get driver's current location (for passengers tracking their driver)"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        responses={200: {
+            'type': 'object',
+            'properties': {
+                'driver_id': {'type': 'integer'},
+                'latitude': {'type': 'string'},
+                'longitude': {'type': 'string'},
+                'updated_at': {'type': 'string'},
+            }
+        }},
+        description="Get current location of a specific driver"
+    )
+    def get(self, request, driver_id):
+        try:
+            driver = Driver.objects.get(user_id=driver_id)
+            
+            if not driver.current_latitude or not driver.current_longitude:
+                return Response(
+                    {'error': 'Driver location not available'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            return Response({
+                'driver_id': driver.user.id,
+                'latitude': str(driver.current_latitude),
+                'longitude': str(driver.current_longitude),
+                'status': driver.status,
+                'updated_at': driver.updated_at.isoformat(),
+            })
+            
+        except Driver.DoesNotExist:
+            return Response(
+                {'error': 'Driver not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )

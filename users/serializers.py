@@ -63,11 +63,44 @@ class DriverSerializer(serializers.ModelSerializer):
     """Driver profile details"""
     user = UserSerializer(read_only=True)
     is_profile_complete = serializers.BooleanField(read_only=True)
+    missing_fields = serializers.ListField(                          # ✅ ADD THIS!
+        child=serializers.CharField(),
+        read_only=True,
+        required=False
+    )
     
     class Meta:
         model = Driver
         fields = '__all__'
         read_only_fields = ['total_rides', 'total_earnings', 'rating']
+
+class DriverProfileCompleteSerializer(serializers.Serializer):
+    """Serializer for completing driver profile - first time setup"""
+    license_number = serializers.CharField(
+        max_length=50,
+        required=True,
+        help_text="Driver's license number"
+    )
+    vehicle_type = serializers.CharField(
+        max_length=50,
+        required=True,
+        help_text="Vehicle type (Sedan, SUV, Buses, etc.)"
+    )
+    vehicle_model = serializers.CharField(
+        max_length=50,
+        required=True,
+        help_text="Vehicle model (e.g., Chevrolet Nexia)"
+    )
+    vehicle_number = serializers.CharField(
+        max_length=30,
+        required=True,
+        help_text="License plate number"
+    )
+    vehicle_color = serializers.CharField(
+        max_length=30,
+        required=True,
+        help_text="Vehicle color"
+    )
 
 class PassengerSerializer(serializers.ModelSerializer):
     """Passenger profile details"""
