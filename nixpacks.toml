@@ -7,16 +7,13 @@ aptPkgs = ["build-essential", "libpq-dev", "python3-venv"]
 [phases.install]
 cmds = [
     "python3.13 -m venv /app/venv",
-    ". /app/venv/bin/activate",
-    "pip install --upgrade pip",
-    "pip install -r requirements.txt"
+    "bash -c 'source /app/venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'"
 ]
 
 [phases.build]
 cmds = [
-    ". /app/venv/bin/activate",
-    "python manage.py collectstatic --noinput"
+    "bash -c 'source /app/venv/bin/activate && python manage.py collectstatic --noinput'"
 ]
 
 [start]
-cmd = ". /app/venv/bin/activate && daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application"
+cmd = "bash -c 'source /app/venv/bin/activate && daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application'"
