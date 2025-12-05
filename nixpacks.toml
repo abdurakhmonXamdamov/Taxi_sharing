@@ -1,15 +1,22 @@
+[tools]
+python = "3.13"
+
 [phases.setup]
-nixPkgs = ["python312", "python312Packages.pip", "postgresql"]
-aptPkgs = ["build-essential", "libpq-dev"]
+aptPkgs = ["build-essential", "libpq-dev", "python3-venv"]
 
 [phases.install]
 cmds = [
+    "python3.13 -m venv /app/venv",
+    ". /app/venv/bin/activate",
     "pip install --upgrade pip",
     "pip install -r requirements.txt"
 ]
 
 [phases.build]
-cmds = ["python manage.py collectstatic --noinput"]
+cmds = [
+    ". /app/venv/bin/activate",
+    "python manage.py collectstatic --noinput"
+]
 
 [start]
-cmd = "daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application"
+cmd = ". /app/venv/bin/activate && daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application"
