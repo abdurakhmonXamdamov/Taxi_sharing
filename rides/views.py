@@ -39,7 +39,7 @@ class RideCreateView(generics.CreateAPIView):
         ride = serializer.save()
         
         # ✅ Notify nearby drivers via WebSocket
-        # self.notify_nearby_drivers(ride)
+        self.notify_nearby_drivers(ride)
         
         # ✅ Return full ride details with ID using RideSerializer
         response_serializer = RideSerializer(ride)

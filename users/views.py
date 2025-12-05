@@ -252,7 +252,7 @@ class DriverLocationUpdateView(APIView):
         driver_profile.save()
         
         # ✅ ADD THIS: Broadcast location to all passengers
-        # self.broadcast_location(driver_profile)
+        self.broadcast_location(driver_profile)
 
         return Response(DriverSerializer(driver_profile).data)
 
