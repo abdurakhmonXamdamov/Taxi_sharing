@@ -1,15 +1,15 @@
 [phases.setup]
-nixPkgs = ["python312", "postgresql"]
+nixPkgs = ["python312", "python312Packages.pip", "postgresql"]
 aptPkgs = ["build-essential", "libpq-dev"]
 
 [phases.install]
 cmds = [
-    "python3.12 -m pip install --upgrade pip",
-    "python3.12 -m pip install -r requirements.txt"
+    "pip install --upgrade pip",
+    "pip install -r requirements.txt"
 ]
 
 [phases.build]
-cmds = ["python3.12 manage.py collectstatic --noinput"]
+cmds = ["python manage.py collectstatic --noinput"]
 
 [start]
-cmd = "python3.12 -m daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application"
+cmd = "daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application"
