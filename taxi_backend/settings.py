@@ -1,25 +1,19 @@
 from datetime import timedelta
 from pathlib import Path
 import os
+from decouple import config
+import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@wbx453fayi_iaz4r#v38%ote3jl+iwug69d7=ts&i!rh*e0r5'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+# Security
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS_STR = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',')]
 
 # Application definition
-
 INSTALLED_APPS = [
     'jazzmin',
     'daphne',
@@ -41,76 +35,38 @@ INSTALLED_APPS = [
     'users',
     'payments',
     'rides'
-
 ]
 
 JAZZMIN_SETTINGS = {
-    # Title on the login screen & admin
     "site_title": "Uzbekistan Taxi Admin",
     "site_header": "Taxi Sharing Platform",
     "site_brand": "Adyuva Taxi",
-    
-    # Logo
-    # "site_logo": "images/logo.png",  # Put your logo in static/images/
-    # "login_logo": "images/logo.png",
-    
-    # Welcome text on the login screen
     "welcome_sign": "Welcome to Taxi Sharing Admin Panel",
-    
-    # Copyright on the footer
     "copyright": "Uzbekistan Taxi Sharing 2025",
-    
-    # Theme
-    "theme": "cyborg",  # Options: flatly, darkly, cerulean, cosmo, etc.
-    
-    # Dark Mode
-    "show_ui_builder": True,  # Allows changing theme from UI
-    
-    # Top Menu
+    "theme": "cyborg",
+    "show_ui_builder": True,
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Support", "url": "https://github.com/abdurakhmonXamdamov", "new_window": True},
         {"model": "auth.User"},
     ],
-    
-    # Side Menu Icons (Font Awesome)
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
         "users.User": "fas fa-user-circle",
         "users.Driver": "fas fa-car",
-        "users.Passenger": "fas fa-user-tag",
+        "users.Passanger": "fas fa-user-tag",
         "rides.Ride": "fas fa-road",
         "rides.SharedRide": "fas fa-users-cog",
         "payments.Payment": "fas fa-dollar-sign",
         "payments.DriverEarnings": "fas fa-chart-line",
     },
-    
-    # Show these apps on the sidebar
     "show_sidebar": True,
     "navigation_expanded": True,
-    
-    # Change order of apps and models
-    "order_with_respect_to": [
-        "users",
-        "rides", 
-        "payments",
-        "auth",
-    ],
-    
-    # Custom buttons
-    "custom_links": {
-        "rides": [{
-            "name": "View Live Map", 
-            "url": "/live-map/",  # You'll create this later
-            "icon": "fas fa-map-marked-alt",
-            "permissions": ["rides.view_ride"]
-        }]
-    },
+    "order_with_respect_to": ["users", "rides", "payments", "auth"],
 }
 
-# UI Tweaks
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
     "footer_small_text": False,
@@ -145,8 +101,9 @@ JAZZMIN_UI_TWEAKS = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # this is for CORS
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -163,6 +120,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -172,80 +130,53 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'taxi_backend.wsgi.application'
+ASGI_APPLICATION = 'taxi_backend.asgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-#?  PostgressSQL configuration
-
+# Database - PostgreSQL from environment
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'taxi_db',
-        'USER': 'postgres',
-        'PASSWORD': 'adyuva_01',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=config(
+            'DATABASE_URL',
+            default='postgresql://postgres:adyuva_01@localhost:5432/taxi_db'
+        ),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'Asia/Tashkent'  # Changed to Tashkent timezone!
 USE_I18N = True
-
 USE_TZ = True
 
+# Custom user model
 AUTH_USER_MODEL = 'users.User'
 
+# Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+# Default primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#? Rest Framework conf
-
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -253,8 +184,7 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-#? API Documentation
-
+# API Documentation
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Taxi Sharing API',
     'DESCRIPTION': 'API for Uzbekistan Taxi Sharing System',
@@ -262,42 +192,51 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-#? CORS
-
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:3000,http://localhost:19006'
+).split(',')
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = ['*']
-CORS_ALLOW_METHODS = ['*']
 
-#? SIMPLE_JWT
+# JWT
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+# Channels - Auto-detect Redis (production) or InMemory (development)
+REDIS_URL = config('REDIS_URL', default=None)
 
-ASGI_APPLICATION = 'taxi_backend.asgi.application'
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+if REDIS_URL:
+    # Production with Redis
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+            },
+        },
     }
-}
+    print("✅ Using Redis for WebSocket channels")
+else:
+    # Development without Redis
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer'
+        }
+    }
+    print("⚠️ Using InMemory channels (development mode)")
 
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("127.0.0.1", 6379)],
-#         },
-#     },
-# }
-
-
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
-
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

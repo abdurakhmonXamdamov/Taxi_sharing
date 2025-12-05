@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView #! for redirect to swagger uic
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView #! API 
 
 
@@ -17,6 +18,8 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
+    path('', RedirectView.as_view(url='/api/docs/', permanent=False)),  # ← Add this!
 ]
 
 if settings.DEBUG:
