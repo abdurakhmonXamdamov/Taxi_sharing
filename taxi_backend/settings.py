@@ -134,15 +134,9 @@ ASGI_APPLICATION = 'taxi_backend.asgi.application'
 
 # Database - PostgreSQL from environment
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config(
-            'DATABASE_URL',
-            default='postgresql://postgres:adyuva_01@localhost:5432/taxi_db'
-        ),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    "default": dj_database_url.config(default=config("DATABASE_URL"))
 }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
