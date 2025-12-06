@@ -20,6 +20,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy project files
 COPY . .
 
+RUN mkdir -p /app/media
+
 # Collect static files during build (optional but recommended)
 RUN python manage.py collectstatic --noinput || true
 
