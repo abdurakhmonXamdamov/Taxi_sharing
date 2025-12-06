@@ -13,6 +13,12 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS_STR = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',')]
 
+# CSRF Trusted Origins (ADD THIS!)
+CSRF_TRUSTED_ORIGINS = [
+    'https://taxi-sharing.up.railway.app',
+    'https://*.railway.app',
+]
+
 # Application definition
 INSTALLED_APPS = [
     'jazzmin',
