@@ -45,4 +45,4 @@ build/
 *.egg-info/
 
 # Project specific
-/static/
+/static/.env
