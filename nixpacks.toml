@@ -14,4 +14,4 @@ cmds = [
 cmds = []
 
 [start]
-cmd = "bash -c 'source /app/venv/bin/activate && python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application'"
+cmd = "bash -c 'source /app/venv/bin/activate && python manage.py migrate && python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} taxi_backend.asgi:application'"
