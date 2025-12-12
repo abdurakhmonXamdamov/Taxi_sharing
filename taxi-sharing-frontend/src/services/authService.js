@@ -19,7 +19,7 @@ export const login = async (username, password) => {
 
     return { success: true, data: response.data };
   } catch (error) {
-    // console.error('Login error:', error.response?.data);
+    console.error('Login error:', error.response?.data);
 
     // Better error handling
     let errorMessage = 'Login failed';
@@ -62,7 +62,7 @@ export const register = async (userData) => {
 
     return { success: true, data: response.data };
   } catch (error) {
-    // console.error('Register error:', error.response?.data);
+    console.error('Register error:', error.response?.data);
 
     if (error.response?.data) {
       const errorData = error.response.data;
@@ -109,7 +109,7 @@ export const getCurrentUser = async () => {
     const userData = await AsyncStorage.getItem('userData');
     return userData ? JSON.parse(userData) : null;
   } catch (error) {
-    // console.error('Get user error:', error);
+    console.error('Get user error:', error);
     return null;
   }
 };
