@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS } from '../src/constants/colors';
 import { register } from '../src/services/authService';
+import Toast from 'react-native-toast-message';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -23,8 +24,8 @@ export default function RegisterScreen() {
     email: '',
     password: '',
     password_confirm: '',
-    first_name: '',
-    last_name: '',
+    // first_name: '',
+    // last_name: '',
     phone_number: '',
     user_type: 'passenger', // default
   });
@@ -40,16 +41,26 @@ export default function RegisterScreen() {
       !formData.username.trim() ||
       !formData.email.trim() ||
       !formData.password.trim() ||
-      !formData.first_name.trim() ||
-      !formData.last_name.trim() ||
+      // !formData.first_name.trim() ||
+      // !formData.last_name.trim() ||
       !formData.phone_number.trim()
     ) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please fill in all fields',
+      });
       return;
     }
 
     if (formData.password !== formData.password_confirm) {
-      Alert.alert('Error', 'Passwords do not match');
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Passwords do not match',
+      });
+      // Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
@@ -59,17 +70,34 @@ export default function RegisterScreen() {
       const result = await register(formData);
 
       if (result.success) {
-        Alert.alert('Success', 'Registration successful!', [
-          { text: 'OK', onPress: () => router.push('./login') }
-        ]);
+        Toast.show({
+          type: 'success',
+          text1: 'Success! 🎉',
+          text2: 'Registration successful! Redirecting to login...',
+        });
+
+        setTimeout(() => {
+          router.replace('/login');
+        }, 2000);
+        
       } else {
         const errorMessage = typeof result.error === 'object' 
           ? JSON.stringify(result.error) 
           : result.error;
-        Alert.alert('Registration Failed', errorMessage);
+
+          Toast.show({
+            type: 'error',
+            text1: 'Registration Failed',
+            text2: errorMessage,
+          });
+        // Alert.alert('Registration Failed', errorMessage);
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -125,7 +153,7 @@ export default function RegisterScreen() {
           </View>
 
           {/* First Name */}
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>First Name</Text>
             <TextInput
               style={styles.input}
@@ -135,10 +163,10 @@ export default function RegisterScreen() {
               onChangeText={(value) => handleChange('first_name', value)}
               editable={!loading}
             />
-          </View>
+          </View> */}
 
           {/* Last Name */}
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Last Name</Text>
             <TextInput
               style={styles.input}
@@ -148,7 +176,7 @@ export default function RegisterScreen() {
               onChangeText={(value) => handleChange('last_name', value)}
               editable={!loading}
             />
-          </View>
+          </View> */}
 
           {/* Username */}
           <View style={styles.inputContainer}>

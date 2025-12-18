@@ -15,7 +15,7 @@ from rides.routing import websocket_urlpatterns
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
+        JWTAuthMiddleware(
             URLRouter(
                 websocket_urlpatterns
             )

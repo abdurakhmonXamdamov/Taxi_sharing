@@ -1,6 +1,7 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
+import Toast from 'react-native-toast-message';
 import {
   View,
   Text,
@@ -32,7 +33,12 @@ export default function LoginScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!username.trim() || !password.trim()) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      Alert.alert('Error', 'Please fill in all fields');
+      // Alert.alert('Error', 'Please fill in all fields');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please fill in all fields',
+      });
       return;
     }
 
@@ -43,16 +49,42 @@ export default function LoginScreen() {
       
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Success', 'Login successful!');
+
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Login successful!',
+        });
+        // Alert.alert('Success', 'Login successful!');
         // Navigate based on user type
         // router.push('/passenger/home'); or router.push('/driver/home');
+
+        const userType = result.data?.user?.user_type || 'passenger';
+
+        if (userType === 'driver') {
+          router.replace('./(driver)/home');
+        } else {
+          router.replace('./(passenger)/home');
+        }
+  
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('Login Failed', result.error || 'Invalid credentials');
+
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: result.error || 'Invalid credentials',
+        });
+        // Alert.alert('Login Failed', result.error || 'Invalid credentials');
       }
     } catch (error) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      // Alert.alert('Error', 'Something went wrong. Please try again.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.',
+      });
     } finally {
       setLoading(false);
     }

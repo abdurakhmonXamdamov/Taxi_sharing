@@ -21,8 +21,8 @@ const RegisterScreen = ({ navigation }) => {
     email: '',
     password: '',
     password_confirm: '',
-    first_name: '',
-    last_name: '',
+    // first_name: '',
+    // last_name: '',
     phone_number: '',
     user_type: 'passenger', // default
   });
@@ -40,8 +40,8 @@ const RegisterScreen = ({ navigation }) => {
       !formData.username.trim() ||
       !formData.email.trim() ||
       !formData.password.trim() ||
-      !formData.first_name.trim() ||
-      !formData.last_name.trim() ||
+      // !formData.first_name.trim() ||
+      // !formData.last_name.trim() ||
       !formData.phone_number.trim()
     ) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -125,7 +125,7 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           {/* First Name */}
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>First Name</Text>
             <TextInput
               style={styles.input}
@@ -135,10 +135,10 @@ const RegisterScreen = ({ navigation }) => {
               onChangeText={(value) => handleChange('first_name', value)}
               editable={!loading}
             />
-          </View>
+          </View> */}
 
           {/* Last Name */}
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <Text style={styles.label}>Last Name</Text>
             <TextInput
               style={styles.input}
@@ -148,7 +148,7 @@ const RegisterScreen = ({ navigation }) => {
               onChangeText={(value) => handleChange('last_name', value)}
               editable={!loading}
             />
-          </View>
+          </View> */}
 
           {/* Username */}
           <View style={styles.inputContainer}>
