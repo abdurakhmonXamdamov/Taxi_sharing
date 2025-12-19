@@ -105,7 +105,7 @@ export default function RequestRideScreen() {
 
           {/* Pickup Location */}
           <View style={styles.locationContainer}>
-            <View style={styles.locationDot} style={[styles.locationDot, styles.pickupDot]} />
+          <View style={[styles.locationDot, styles.pickupDot]} />
             <View style={styles.inputWrapper}>
               <Text style={styles.inputLabel}>Pickup Location</Text>
               <TextInput

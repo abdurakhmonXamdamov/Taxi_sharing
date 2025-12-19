@@ -78,6 +78,32 @@ export default function PassengerHome() {
     router.push('/(passenger)/profile');
   };
 
+  useEffect(() => {
+    const unsubscribeRideAccepted = subscribe('ride_accepted', (data: any) => {
+      console.log('Ride accepted:', data);
+      Alert.alert(
+        'Ride Accepted! 🎉',
+        `Driver ${data.driver_name} is on the way!`,
+        [
+          { 
+            text: 'OK',
+            onPress: () => router.push('/(passenger)/active-ride')
+          }
+        ]
+      );
+    });
+  
+    const unsubscribeDriverLocation = subscribe('location_update', (data: any) => {
+      console.log('Driver location update:', data);
+      // TODO: Update driver marker on map
+    });
+  
+    return () => {
+      unsubscribeRideAccepted();
+      unsubscribeDriverLocation();
+    };
+  }, [subscribe]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>

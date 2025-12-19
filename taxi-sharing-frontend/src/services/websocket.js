@@ -21,34 +21,22 @@ class WebSocketService {
       }
 
       // Create WebSocket connection
-      const wsUrl = `${WS_URL}/ws/location/?token=${token}`;
-      this.ws = new WebSocket(wsUrl);
-
-      this.ws.onopen = () => {
-        console.log('✅ WebSocket Connected');
-        this.reconnectAttempts = 0;
+      const ws = new WebSocket(
+        `wss://taxisharing.up.railway.app/ws/location/?token=${token}`
+      );
+      
+      ws.onopen = () => {
+        console.log("✅ WebSocket connected");
       };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('📩 WebSocket Message:', data);
-          
-          // Notify all listeners
-          this.notifyListeners(data);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
+      
+      ws.onerror = (e) => {
+        console.error("❌ WebSocket error", e);
       };
-
-      this.ws.onerror = (error) => {
-        console.error('❌ WebSocket Error:', error);
+      
+      ws.onclose = (e) => {
+        console.log("🔌 WebSocket closed", e.code, e.reason);
       };
-
-      this.ws.onclose = () => {
-        console.log('🔌 WebSocket Disconnected');
-        this.handleReconnect();
-      };
+      
 
     } catch (error) {
       console.error('WebSocket connection error:', error);
