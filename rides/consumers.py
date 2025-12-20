@@ -6,43 +6,55 @@ class LocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope['user']
         
-        if not self.user.is_authenticated:
-            await self.close()
-            return
-        
-        # Join personal room for notifications
-        self.personal_room = f'user_{self.user.id}'
-        await self.channel_layer.group_add(
-            self.personal_room,
-            self.channel_name
-        )
-        
-        # Join general location updates room
-        self.location_room = 'location_updates'
-        await self.channel_layer.group_add(
-            self.location_room,
-            self.channel_name
-        )
         
         await self.accept()
-        print(f"✅ WebSocket connected: {self.user.username}")
+        
+        if self.user.is_authenticated:
+            print(f"✅ WebSocket connected: {self.user.username}")
+            
+            # Join personal room for notifications
+            self.personal_room = f'user_{self.user.id}'
+            await self.channel_layer.group_add(
+                self.personal_room,
+                self.channel_name
+            )
+            
+            # Join general location updates room
+            self.location_room = 'location_updates'
+            await self.channel_layer.group_add(
+                self.location_room,
+                self.channel_name
+            )
+        else:
+            print(f"⚠️ WebSocket connected: Anonymous user")
     
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.personal_room,
-            self.channel_name
-        )
-        await self.channel_layer.group_discard(
-            self.location_room,
-            self.channel_name
-        )
-        print(f"❌ WebSocket disconnected: {self.user.username}")
+        if self.user.is_authenticated:
+            await self.channel_layer.group_discard(
+                self.personal_room,
+                self.channel_name
+            )
+            await self.channel_layer.group_discard(
+                self.location_room,
+                self.channel_name
+            )
+            print(f"❌ WebSocket disconnected: {self.user.username}")
+        else:
+            print(f"❌ WebSocket disconnected: Anonymous user")
     
     async def receive(self, text_data):
         """Receive message from WebSocket"""
         try:
             data = json.loads(text_data)
             message_type = data.get('type')
+            
+            # Check authentication for sensitive operations
+            if not self.user.is_authenticated:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Authentication required'
+                }))
+                return
             
             if message_type == 'location_update':
                 await self.handle_location_update(data)
@@ -57,7 +69,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
                 'message': str(e)
             }))
     
-    # ✅ NEW: Handle new ride notifications (sent to drivers)
+    # Handle new ride notifications (sent to drivers)
     async def new_ride_notification(self, event):
         """Send new ride notification to driver"""
         await self.send(text_data=json.dumps({
@@ -73,7 +85,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
             'ride_type': event['ride_type'],
         }))
     
-    # ✅ NEW: Handle ride accepted notifications (sent to passengers)
+    # Handle ride accepted notifications (sent to passengers)
     async def ride_accepted_notification(self, event):
         """Send ride accepted notification to passenger"""
         await self.send(text_data=json.dumps({
@@ -88,7 +100,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
             'driver_rating': event['driver_rating'],
         }))
     
-    # ✅ NEW: Handle ride status updates
+    # Handle ride status updates
     async def ride_status_update(self, event):
         """Send ride status update"""
         await self.send(text_data=json.dumps({
