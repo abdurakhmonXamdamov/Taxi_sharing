@@ -10,6 +10,10 @@ export const login = async (username, password) => {
       password,
     });
 
+    console.log('=== LOGIN RESPONSE ===');
+    console.log(JSON.stringify(response.data, null, 2));
+    console.log('=====================');
+
     const { access, refresh, user } = response.data;
 
     // Save tokens and user data
@@ -53,6 +57,9 @@ export const register = async (userData) => {
   try {
     const response = await api.post(ENDPOINTS.REGISTER, userData);
 
+    console.log('=== REGISTER RESPONSE ===');
+    console.log(JSON.stringify(response.data, null, 2));
+    console.log('========================');
     const { access, refresh, user } = response.data;
 
     // Save tokens and user data
@@ -64,6 +71,8 @@ export const register = async (userData) => {
   } catch (error) {
     console.error('Register error:', error.response?.data);
 
+    let errorMessage = 'Registration failed';
+    
     if (error.response?.data) {
       const errorData = error.response.data;
       

@@ -5,21 +5,20 @@ import { useAuth } from './AuthContext';
 const WebSocketContext = createContext();
 
 export const WebSocketProvider = ({ children }) => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn } = useAuth(); // ✅ Check if user is logged in
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState(null);
 
   useEffect(() => {
+    // ✅ Only connect if user is logged in
     if (isLoggedIn) {
-      // Connect when user is logged in
+      console.log('✅ User logged in, connecting WebSocket...');
       WebSocketService.connect();
       
-      // Subscribe to all messages
       const unsubscribe = WebSocketService.subscribe('all', (data) => {
         setLastMessage(data);
       });
 
-      // Check connection status
       const checkConnection = setInterval(() => {
         setIsConnected(WebSocketService.isConnected());
       }, 1000);
@@ -29,8 +28,13 @@ export const WebSocketProvider = ({ children }) => {
         unsubscribe();
         WebSocketService.disconnect();
       };
+    } else {
+      console.log('⚠️ User not logged in, skipping WebSocket connection');
+      // Disconnect if user logs out
+      WebSocketService.disconnect();
+      setIsConnected(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn]); // ✅ Reconnect when login status changes
 
   const sendMessage = (message) => {
     WebSocketService.send(message);
