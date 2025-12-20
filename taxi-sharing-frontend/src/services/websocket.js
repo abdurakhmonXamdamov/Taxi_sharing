@@ -5,7 +5,7 @@ class WebSocketService {
   constructor() {
     this.ws = null;
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
+    this.maxReconnectAttempts = 3; 
     this.reconnectDelay = 3000;
     this.listeners = new Map();
   }
@@ -16,30 +16,47 @@ class WebSocketService {
       const token = await AsyncStorage.getItem('accessToken');
       
       if (!token) {
-        console.log('No token found, cannot connect to WebSocket');
+        console.log('⚠️ No token found, skipping WebSocket connection');
         return;
       }
 
+      // Close existing connection if any
+      if (this.ws) {
+        this.ws.close();
+      }
+
       // Create WebSocket connection
-      const ws = new WebSocket(
-        `wss://taxisharing.up.railway.app/ws/location/?token=${token}`
-      );
+      const wsUrl = `${WS_URL}/ws/location/?token=${token}`;
+      console.log('🔌 Connecting to WebSocket:', wsUrl);
       
-      ws.onopen = () => {
+      this.ws = new WebSocket(wsUrl);
+      
+      this.ws.onopen = () => {
         console.log("✅ WebSocket connected");
+        this.reconnectAttempts = 0;
       };
       
-      ws.onerror = (e) => {
-        console.error("❌ WebSocket error", e);
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('📩 WebSocket message:', data);
+          this.notifyListeners(data);
+        } catch (error) {
+          console.error('❌ Error parsing WebSocket message:', error);
+        }
       };
       
-      ws.onclose = (e) => {
-        console.log("🔌 WebSocket closed", e.code, e.reason);
+      this.ws.onerror = (e) => {
+        console.log("⚠️ WebSocket error:", e.message);
       };
       
+      this.ws.onclose = (e) => {
+        console.log("🔌 WebSocket closed:", e.code, e.reason);
+        this.handleReconnect();
+      };
 
     } catch (error) {
-      console.error('WebSocket connection error:', error);
+      console.error('❌ WebSocket connection error:', error);
     }
   }
 
@@ -47,7 +64,7 @@ class WebSocketService {
   handleReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}`);
+      console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
       
       setTimeout(() => {
         this.connect();
@@ -62,7 +79,7 @@ class WebSocketService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {
-      console.error('WebSocket is not connected');
+      console.log('⚠️ WebSocket not connected, cannot send message');
     }
   }
 
@@ -76,9 +93,11 @@ class WebSocketService {
     // Return unsubscribe function
     return () => {
       const callbacks = this.listeners.get(eventType);
-      const index = callbacks.indexOf(callback);
-      if (index > -1) {
-        callbacks.splice(index, 1);
+      if (callbacks) {
+        const index = callbacks.indexOf(callback);
+        if (index > -1) {
+          callbacks.splice(index, 1);
+        }
       }
     };
   }
@@ -108,6 +127,7 @@ class WebSocketService {
       this.ws = null;
     }
     this.listeners.clear();
+    this.reconnectAttempts = 0;
   }
 
   // Check connection status

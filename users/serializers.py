@@ -5,8 +5,9 @@ from .models import User, Driver, Passanger
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'user_type', 'phone_number', 'avatar', 'is_verified']
-        read_only_fields = ['id', 'is_verified']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'user_type', 'phone_number', 'avatar', 'is_verified', 'current_latitude', 'current_longitude', 'location_updated_at', 'location_permission_granted']
+        
+        read_only_fields = ['id', 'is_verified', 'location_updated_at']
 
 class RegisterSerializer(serializers.ModelSerializer):
     """User registration"""

@@ -16,6 +16,35 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    current_latitude = models.DecimalField(
+        max_digits=9, 
+        decimal_places=6, 
+        null=True, 
+        blank=True,
+        help_text="Current latitude position"
+    )
+
+    current_longitude = models.DecimalField(
+        max_digits=9, 
+        decimal_places=6, 
+        null=True, 
+        blank=True,
+        help_text="Current longitude position"
+    )
+    
+    location_updated_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="When location was last updated"
+    )
+    
+    # ✅ PERMISSION FLAGS
+    location_permission_granted = models.BooleanField(
+        default=False,
+        help_text="Has user granted location permission"
+    )
+    
     
     def __str__(self):
         return f"{self.username} ({self.user_type})"
