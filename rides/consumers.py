@@ -5,28 +5,27 @@ from channels.db import database_sync_to_async
 class LocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope['user']
-        
-        
+
+        if not self.user.is_authenticated:
+            print("❌ WS rejected: anonymous")
+            await self.close()
+            return
+
         await self.accept()
-        
-        if self.user.is_authenticated:
-            print(f"✅ WebSocket connected: {self.user.username}")
-            
-            # Join personal room for notifications
-            self.personal_room = f'user_{self.user.id}'
-            await self.channel_layer.group_add(
-                self.personal_room,
-                self.channel_name
-            )
-            
-            # Join general location updates room
-            self.location_room = 'location_updates'
-            await self.channel_layer.group_add(
-                self.location_room,
-                self.channel_name
-            )
-        else:
-            print(f"⚠️ WebSocket connected: Anonymous user")
+        print(f"✅ WebSocket connected: {self.user.username}")
+
+        self.personal_room = f'user_{self.user.id}'
+        await self.channel_layer.group_add(
+            self.personal_room,
+            self.channel_name
+        )
+
+        self.location_room = 'location_updates'
+        await self.channel_layer.group_add(
+            self.location_room,
+            self.channel_name
+        )
+
     
     async def disconnect(self, close_code):
         if self.user.is_authenticated:

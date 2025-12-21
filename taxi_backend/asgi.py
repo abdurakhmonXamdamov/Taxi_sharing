@@ -14,11 +14,10 @@ from rides.middleware import JWTAuthMiddleware
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": AllowedHostsOriginValidator(
+    "websocket": 
         JWTAuthMiddleware(
             URLRouter(
                 websocket_urlpatterns
             )
-        )
-    ),
+        ),
 })
