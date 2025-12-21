@@ -11,11 +11,12 @@ django_asgi_app = get_asgi_application()
 
 # Import routing after Django setup
 from rides.routing import websocket_urlpatterns
+from rides.middleware import JWTAuthMiddleware
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
+        JWTAuthMiddleware(
             URLRouter(
                 websocket_urlpatterns
             )
