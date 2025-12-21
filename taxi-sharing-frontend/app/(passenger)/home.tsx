@@ -12,11 +12,9 @@ import {
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useWebSocket } from '../../src/context/WebSocketContext';
 import { COLORS } from '../../src/constants/colors';
 import { useAuth } from '../../src/context/AuthContext';
-
-// ✅ NO IMPORTS FROM react-native-maps!
+import { useWebSocket } from '../../src/context/WebSocketContext';
 
 type LocationType = {
   latitude: number;
@@ -27,8 +25,9 @@ type LocationType = {
 
 export default function PassengerHome() {
   const { user } = useAuth();
-  const { isConnected, subscribe } = useWebSocket();
-  const router = useRouter(); 
+  const { isConnected } = useWebSocket();
+  const router = useRouter();
+  
   const [location, setLocation] = useState<LocationType>(null);
   const [loading, setLoading] = useState(true);
   const [destination, setDestination] = useState('');
@@ -70,39 +69,13 @@ export default function PassengerHome() {
       Alert.alert('Error', 'Please enter a destination');
       return;
     }
-    router.push('./(passenger)/request-ride');
-    Alert.alert('Coming Soon!', 'Ride request feature will be available soon');
-    
+
+    router.push('/(passenger)/request-ride');
   };
+
   const handleProfilePress = () => {
     router.push('/(passenger)/profile');
   };
-
-  useEffect(() => {
-    const unsubscribeRideAccepted = subscribe('ride_accepted', (data: any) => {
-      console.log('Ride accepted:', data);
-      Alert.alert(
-        'Ride Accepted! 🎉',
-        `Driver ${data.driver_name} is on the way!`,
-        [
-          { 
-            text: 'OK',
-            onPress: () => router.push('/(passenger)/active-ride')
-          }
-        ]
-      );
-    });
-  
-    const unsubscribeDriverLocation = subscribe('location_update', (data: any) => {
-      console.log('Driver location update:', data);
-      // TODO: Update driver marker on map
-    });
-  
-    return () => {
-      unsubscribeRideAccepted();
-      unsubscribeDriverLocation();
-    };
-  }, [subscribe]);
 
   if (loading) {
     return (
@@ -127,7 +100,7 @@ export default function PassengerHome() {
 
   return (
     <View style={styles.container}>
-      {/* ✅ Show location info instead of map for now */}
+      {/* Map Placeholder */}
       <View style={styles.mapPlaceholder}>
         <Ionicons name="map-outline" size={64} color={COLORS.primary} />
         <Text style={styles.mapPlaceholderTitle}>Location Ready!</Text>
@@ -138,63 +111,70 @@ export default function PassengerHome() {
           Lng: {location.longitude.toFixed(6)}
         </Text>
         <Text style={styles.mapPlaceholderSubtext}>
-          Map will be available on mobile app
+          Interactive map will be available on mobile app
         </Text>
       </View>
 
       {/* Profile Button - Top Left */}
-<TouchableOpacity
-  style={styles.profileButton}
-  onPress={handleProfilePress}
-  activeOpacity={0.8}
->
-  <View style={styles.avatar}>
-    <Text style={styles.avatarText}>
-      {user?.first_name?.[0]?.toUpperCase() || '?'}
-    </Text>
-  </View>
-</TouchableOpacity>
+      <TouchableOpacity
+        style={styles.profileButton}
+        onPress={handleProfilePress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {user?.first_name?.[0]?.toUpperCase() || '?'}
+          </Text>
+        </View>
+      </TouchableOpacity>
 
- {/* Bottom Card - Simple Search */}
-<View style={styles.bottomCard}>
-  {/* Current Location Input */}
-  <View style={styles.locationInputContainer}>
-    <View style={styles.locationIconContainer}>
-      <Ionicons name="location" as any size={20} color={COLORS.success} />
-    </View>
-    <TextInput
-      style={styles.locationInput}
-      placeholder="Current location"
-      placeholderTextColor={COLORS.textSecondary}
-      value="Your current location"
-      editable={false}
-    />
-  </View>
+      {/* WebSocket Status Indicator */}
+      <View style={[styles.statusIndicator, { backgroundColor: isConnected ? COLORS.success : COLORS.error }]}>
+        <Text style={styles.statusText}>
+          {isConnected ? '● Online' : '● Offline'}
+        </Text>
+      </View>
 
-  {/* Destination Input */}
-  <View style={styles.locationInputContainer}>
-    <View style={styles.locationIconContainer}>
-      <Ionicons name="search" as any size={20} color={COLORS.error} />
-    </View>
-    <TextInput
-      style={styles.locationInput}
-      placeholder="Where to?"
-      placeholderTextColor={COLORS.textSecondary}
-      value={destination}
-      onChangeText={setDestination}
-    />
-  </View>
+      {/* Bottom Card - Search */}
+      <View style={styles.bottomCard}>
+        {/* Current Location Input */}
+        <View style={styles.locationInputContainer}>
+          <View style={styles.locationIconContainer}>
+            <Ionicons name="location" as any size={20} color={COLORS.success} />
+          </View>
+          <TextInput
+            style={styles.locationInput}
+            placeholder="Current location"
+            placeholderTextColor={COLORS.textSecondary}
+            value="Your current location"
+            editable={false}
+          />
+        </View>
 
-  {/* Search Button */}
-  <TouchableOpacity 
-    style={styles.searchButton}
-    onPress={handleRequestRide}
-    activeOpacity={0.8}
-  >
-    <Ionicons name="search" as any size={24} color={COLORS.textPrimary} />
-    <Text style={styles.searchButtonText}>Find Drivers</Text>
-  </TouchableOpacity>
-</View>
+        {/* Destination Input */}
+        <View style={styles.locationInputContainer}>
+          <View style={styles.locationIconContainer}>
+            <Ionicons name="search" as any size={20} color={COLORS.error} />
+          </View>
+          <TextInput
+            style={styles.locationInput}
+            placeholder="Where to?"
+            placeholderTextColor={COLORS.textSecondary}
+            value={destination}
+            onChangeText={setDestination}
+          />
+        </View>
+
+        {/* Search Button */}
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={handleRequestRide}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="search" as any size={24} color={COLORS.textPrimary} />
+          <Text style={styles.searchButtonText}>Find Drivers</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -240,7 +220,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // ✅ Map placeholder instead of actual map
   mapPlaceholder: {
     flex: 1,
     justifyContent: 'center',
@@ -270,10 +249,11 @@ const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 60 : 40,
     left: 20,
     zIndex: 10,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   avatar: {
     width: 50,
@@ -282,21 +262,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    borderWidth: 3,
+    borderColor: COLORS.background,
   },
   avatarText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.textPrimary,
   },
-  greeting: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+  statusIndicator: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    right: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
   },
-  userName: {
-    fontSize: 20,
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
   bottomCard: {
     position: 'absolute',
@@ -355,6 +341,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 12,
   },
-  
 });
-
