@@ -4,6 +4,7 @@ from channels.db import database_sync_to_async
 
 class LocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        await self.accept()
         self.user = self.scope['user']
 
         if not self.user.is_authenticated:
@@ -11,7 +12,6 @@ class LocationConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        await self.accept()
         print(f"✅ WebSocket connected: {self.user.username}")
 
         self.personal_room = f'user_{self.user.id}'
