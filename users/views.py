@@ -224,8 +224,8 @@ class CompleteDriverProfileView(APIView):
         
         try:
             # ✅ Get or create driver profile (FIX: might not exist!)
-            from .models import DriverProfile
-            driver, created = DriverProfile.objects.get_or_create(user=request.user)
+            from .models import Driver
+            driver, created = Driver.objects.get_or_create(user=request.user)
             
             if created:
                 print(f"✅ Created new driver profile for {request.user.username}")
