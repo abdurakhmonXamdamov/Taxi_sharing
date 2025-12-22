@@ -15,6 +15,7 @@ from .serializers import (
 )
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from rest_framework.permissions import IsAuthenticated
 
 User = get_user_model()
 
@@ -100,7 +101,7 @@ class UserProfileView(APIView):
 
 class UpdateLocationView(APIView):
     """Update user's current location (for both passengers and drivers)"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     @extend_schema(
         request={
@@ -133,71 +134,38 @@ class UpdateLocationView(APIView):
             )
         ]
     )
+
     def post(self, request):
         user = request.user
+
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
-        
-        print(f"📍 Location update request from {user.username} ({user.user_type})")
-        print(f"   Latitude: {latitude}, Longitude: {longitude}")
-        
-        if not latitude or not longitude:
-            print(f"   ❌ Missing coordinates")
-            return Response({
-                'status': 'error',
-                'message': 'Latitude and longitude are required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            # ✅ Update user location
-            user.current_latitude = latitude
-            user.current_longitude = longitude
-            user.location_updated_at = timezone.now()
-            user.location_permission_granted = True
-            user.save(update_fields=[
-                'current_latitude',
-                'current_longitude',
-                'location_updated_at',
-                'location_permission_granted'
-            ])
-            
-            print(f"   ✅ User location saved")
-            
-            # ✅ If driver, also update driver profile AND broadcast
-            if user.user_type == 'driver':
-                try:
-                    driver_profile = user.driver_profile
-                    driver_profile.current_latitude = latitude
-                    driver_profile.current_longitude = longitude
-                    driver_profile.save(update_fields=[
-                        'current_latitude',
-                        'current_longitude'
-                    ])
-                    print(f"   ✅ Driver profile location saved")
-                    
-                    # ✅ FIX: Actually call broadcast!
-                    self.broadcast_driver_location(driver_profile)
-                    
-                except Exception as e:
-                    print(f"   ⚠️ Could not update driver profile: {e}")
-            else:
-                print(f"   ✅ Passenger location saved")
-            
-            # ✅ FIX: Include updated_at in response
-            return Response({
-                'status': 'success',
-                'message': 'Location updated',
-                'latitude': float(latitude),
-                'longitude': float(longitude),
-                'updated_at': user.location_updated_at.isoformat()
-            })
-            
-        except Exception as e:
-            print(f"   ❌ Error: {e}")
-            return Response({
-                'status': 'error',
-                'message': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        if latitude is None or longitude is None:
+            return Response(
+                {'detail': 'Latitude and longitude are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.current_latitude = latitude
+        user.current_longitude = longitude
+        user.location_updated_at = timezone.now()
+        user.save(update_fields=[
+            'current_latitude',
+            'current_longitude',
+            'location_updated_at'
+        ])
+
+        return Response(
+            {
+                'status': 'ok',
+                'user_id': user.id,
+                'latitude': latitude,
+                'longitude': longitude
+            },
+            status=status.HTTP_200_OK
+        )
+
     
     def broadcast_driver_location(self, driver_profile):
         """Broadcast driver location via WebSocket"""
