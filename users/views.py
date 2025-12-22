@@ -134,6 +134,7 @@ class UpdateLocationView(APIView):
             )
         ]
     )
+
     def post(self, request):
         user = request.user
         latitude = request.data.get('latitude')
@@ -146,38 +147,34 @@ class UpdateLocationView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            # Update user's location
             user.current_latitude = latitude
             user.current_longitude = longitude
             user.location_updated_at = timezone.now()
             user.location_permission_granted = True
             user.save()
             
-            # If driver, also update driver profile location
+            # If driver, also update driver profile
             if user.user_type == 'driver':
                 try:
                     driver_profile = user.driver_profile
                     driver_profile.current_latitude = latitude
                     driver_profile.current_longitude = longitude
                     driver_profile.save()
-                    
-                    # Broadcast driver location via WebSocket
-                    self.broadcast_driver_location(driver_profile)
-                except Driver.DoesNotExist:
-                    pass
+                    print(f"📍 Updated driver {user.username} location: {latitude}, {longitude}")
+                except Exception as e:
+                    print(f"⚠️ Could not update driver profile: {e}")
             
             return Response({
                 'status': 'success',
-                'message': 'Location updated successfully',
-                'latitude': float(user.current_latitude),
-                'longitude': float(user.current_longitude),
-                'updated_at': user.location_updated_at.isoformat()
+                'message': 'Location updated',
+                'latitude': float(latitude),
+                'longitude': float(longitude),
             })
             
         except Exception as e:
             return Response({
                 'status': 'error',
-                'message': f'Failed to update location: {str(e)}'
+                'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def broadcast_driver_location(self, driver_profile):
@@ -399,7 +396,6 @@ class DriverLocationUpdateView(APIView):
         except Exception as e:
             print(f"❌ Error broadcasting location: {e}")
 
-
 class NearbyDriversView(APIView):
     """Find nearby available drivers"""
     permission_classes = [permissions.IsAuthenticated]
@@ -450,7 +446,6 @@ class NearbyDriversView(APIView):
         } for item in nearby]
         
         return Response(result)
-
 
 class PassengerProfileView(APIView):
     """Get/Update passenger profile"""
@@ -511,7 +506,6 @@ class PassengerProfileView(APIView):
                 {'error': 'Passenger profile not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-
 
 class DriverCurrentLocationView(APIView):
     """Get driver's current location (for passengers tracking their driver)"""

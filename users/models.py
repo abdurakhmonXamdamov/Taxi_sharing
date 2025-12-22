@@ -74,8 +74,21 @@ class Driver(models.Model):
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
 
-  current_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-  current_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+  current_latitude = models.DecimalField(
+    max_digits=9, 
+    decimal_places=6, 
+    null=True, 
+    blank=True,
+    help_text="Current latitude position"
+  )
+
+  current_longitude = models.DecimalField(
+    max_digits=9, 
+    decimal_places=6, 
+    null=True, 
+    blank=True,
+    help_text="Current longitude position"
+  )
 
   status = models.CharField(max_length=20, choices=STATUS_CHOICE, default='offline')
   rating = models.DecimalField(max_digits=3, decimal_places=2, default=5.0)
