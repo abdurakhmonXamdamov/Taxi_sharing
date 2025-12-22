@@ -1,197 +1,663 @@
 
-import { useWebSocket } from '../../src/context/WebSocketContext';
-import React, { useState, useEffect } from 'react';
+
+// import React, { useState, useEffect, useRef } from 'react';
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   TouchableOpacity,
+//   Alert,
+//   ActivityIndicator,
+//   Platform,
+//   Switch,
+// } from 'react-native';
+// import MapView, { Marker, PROVIDER_GOOGLE , Region } from 'react-native-maps';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { API_URL } from '../../src/constants/config';
+// import * as Location from 'expo-location';
+// import { Ionicons } from '@expo/vector-icons';
+// import { useRouter } from 'expo-router';
+// import { COLORS } from '../../src/constants/colors';
+// import { useAuth } from '../../src/context/AuthContext';
+// import { useWebSocket } from '../../src/context/WebSocketContext';
+
+// export default function DriverHome() {
+//   const { user } = useAuth();
+//   const { isConnected, sendMessage } = useWebSocket();
+//   const router = useRouter();
+//   const mapRef = useRef<MapView>(null);
+
+//   const [location, setLocation] = useState<Region | null>(null);
+//   const [loading, setLoading] = useState(true);
+//   const [isOnline, setIsOnline] = useState(false);
+//   const [profileComplete, setProfileComplete] = useState(false); // ✅ Add this
+
+//   useEffect(() => {
+//     requestLocationPermission();
+//     checkProfileCompletion(); 
+//   }, []);
+
+//    // ✅ Add this function
+//    const checkProfileCompletion = async () => {
+//     try {
+//       const token = await AsyncStorage.getItem('accessToken');
+//       const response = await fetch(`${API_URL}/api/auth/driver/profile/complete/`, {
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//         },
+//       });
+
+//       const data = await response.json();
+      
+//       // Check if all required fields are filled
+//       const isComplete = !!(
+//         data.license_number &&
+//         data.vehicle_type &&
+//         data.vehicle_model &&
+//         data.vehicle_number &&
+//         data.vehicle_color
+//       );
+
+//       setProfileComplete(isComplete);
+//     } catch (error) {
+//       console.error('Error checking profile:', error);
+//     }
+//   };
+//   // Send location updates when online
+//   useEffect(() => {
+//     if (isOnline && location && isConnected) {
+//       const interval = setInterval(() => {
+//         sendMessage({
+//           type: 'location_update',
+//           latitude: location.latitude,
+//           longitude: location.longitude,
+//         });
+//         console.log('📍 Sent location update');
+//       }, 5000);
+
+//       return () => clearInterval(interval);
+//     }
+//   }, [isOnline, location, isConnected]);
+
+//   const requestLocationPermission = async () => {
+//     try {
+//       const { status } = await Location.requestForegroundPermissionsAsync();
+      
+//       if (status !== 'granted') {
+//         Alert.alert(
+//           'Permission Denied',
+//           'Location permission is required to use this app'
+//         );
+//         setLoading(false);
+//         return;
+//       }
+
+//       getCurrentLocation();
+//     } catch (error) {
+//       console.error('Error requesting location permission:', error);
+//       setLoading(false);
+//     }
+//   };
+
+//   const getCurrentLocation = async () => {
+//     try {
+//       const currentLocation = await Location.getCurrentPositionAsync({
+//         accuracy: Location.Accuracy.High,
+//       });
+
+//       const newLocation = {
+//         latitude: currentLocation.coords.latitude,
+//         longitude: currentLocation.coords.longitude,
+//         latitudeDelta: 0.01,
+//         longitudeDelta: 0.01,
+//       };
+
+//       setLocation(newLocation);
+//       setLoading(false);
+//     } catch (error) {
+//       console.error('Error getting location:', error);
+//       Alert.alert('Error', 'Could not get your current location');
+//       setLoading(false);
+//     }
+//   };
+
+//   const centerOnMyLocation = async () => {
+//     try {
+//       const currentLocation = await Location.getCurrentPositionAsync({
+//         accuracy: Location.Accuracy.High,
+//       });
+
+//       const newLocation = {
+//         latitude: currentLocation.coords.latitude,
+//         longitude: currentLocation.coords.longitude,
+//         latitudeDelta: 0.01,
+//         longitudeDelta: 0.01,
+//       };
+
+//       setLocation(newLocation);
+
+//       if (mapRef.current) {
+//         mapRef.current.animateToRegion(newLocation, 1000);
+//       }
+
+//       Alert.alert('Success', 'Location updated!');
+//     } catch (error) {
+//       console.error('Error getting location:', error);
+//       Alert.alert('Error', 'Could not get your current location');
+//     }
+//   };
+
+//   // const toggleOnlineStatus = () => {
+//   //   setIsOnline(!isOnline);
+//   //   Alert.alert(
+//   //     isOnline ? 'Going Offline' : 'Going Online',
+//   //     isOnline 
+//   //       ? 'You will stop receiving ride requests'
+//   //       : 'You will start receiving ride requests'
+//   //   );
+//   // };
+//   const toggleOnlineStatus = () => {
+//     // Check if profile is complete
+//     if (!profileComplete) {
+//       Alert.alert(
+//         'Complete Your Profile',
+//         'Please fill in your vehicle information before going online',
+//         [
+//           { text: 'Cancel', style: 'cancel' },
+//           {
+//             text: 'Complete Profile',
+//             onPress: () => router.push('/(driver)/complete-profile'),
+//           },
+//         ]
+//       );
+//       return;
+//     }
+
+//     setIsOnline(!isOnline);
+//     Alert.alert(
+//       isOnline ? 'Going Offline' : 'Going Online',
+//       isOnline 
+//         ? 'You will stop receiving ride requests'
+//         : 'You will start receiving ride requests'
+//     );
+//   };
+
+
+//   const handleProfilePress = () => {
+//     router.push('/(driver)/profile');
+//   };
+
+//   if (loading) {
+//     return (
+//       <View style={styles.loadingContainer}>
+//         <ActivityIndicator size="large" color={COLORS.primary} />
+//         <Text style={styles.loadingText}>Getting your location...</Text>
+//       </View>
+//     );
+//   }
+
+//   if (!location) {
+//     return (
+//       <View style={styles.errorContainer}>
+//         <Ionicons name="location-outline" size={64} color={COLORS.textSecondary} />
+//         <Text style={styles.errorText}>Could not access your location</Text>
+//         <TouchableOpacity style={styles.retryButton} onPress={getCurrentLocation}>
+//           <Text style={styles.retryButtonText}>Try Again</Text>
+//         </TouchableOpacity>
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <View style={styles.container}>
+//       {/* Map */}
+//       <MapView
+//         ref={mapRef}
+//         provider={PROVIDER_GOOGLE}
+//         style={styles.map}
+//         initialRegion={location}
+//         showsUserLocation={true}
+//         showsMyLocationButton={false}
+//         showsCompass={true}
+//         zoomEnabled={true}
+//         scrollEnabled={true}
+//       >
+//         {/* Driver's current location marker */}
+//         <Marker
+//           coordinate={{
+//             latitude: location.latitude,
+//             longitude: location.longitude,
+//           }}
+//           title="You are here"
+//           description="Your current location"
+//         >
+//           <View style={styles.driverMarker}>
+//             <Ionicons name="car" size={24} color="#fff" />
+//           </View>
+//         </Marker>
+//       </MapView>
+
+//       {/* Profile Button */}
+//       <TouchableOpacity
+//         style={styles.profileButton}
+//         onPress={handleProfilePress}
+//         activeOpacity={0.8}
+//       >
+//         <View style={styles.avatar}>
+//           <Text style={styles.avatarText}>
+//             {user?.first_name?.[0]?.toUpperCase() || '?'}
+//           </Text>
+//         </View>
+//       </TouchableOpacity>
+
+//       {/* My Location Button */}
+//       <TouchableOpacity
+//         style={styles.myLocationButton}
+//         onPress={centerOnMyLocation}
+//         activeOpacity={0.8}
+//       >
+//         <Ionicons name="locate" size={24} color={COLORS.primary} />
+//       </TouchableOpacity>
+
+//       {/* WebSocket Connection Status */}
+//       <View style={[styles.connectionStatus, {
+//         backgroundColor: isConnected ? COLORS.success : COLORS.error
+//       }]}>
+//         <Text style={styles.connectionText}>
+//           {isConnected ? '● Connected' : '● Offline'}
+//         </Text>
+//       </View>
+
+//       {/* Bottom Card */}
+//       <View style={styles.bottomCard}>
+//         <View style={styles.statusRow}>
+//           <View>
+//             <Text style={styles.statusTitle}>Driver Status</Text>
+//             <Text style={[styles.statusText, {
+//               color: isOnline ? COLORS.success : COLORS.textSecondary
+//             }]}>
+//               {isOnline ? '🟢 Online - Ready for rides' : '⚫ Offline'}
+//             </Text>
+//           </View>
+//           <Switch
+//             value={isOnline}
+//             onValueChange={toggleOnlineStatus}
+//             trackColor={{ false: COLORS.textSecondary, true: COLORS.success }}
+//             thumbColor={COLORS.background}
+//           />
+//         </View>
+
+//         {isOnline && (
+//           <View style={styles.infoBox}>
+//             <Ionicons name="information-circle" size={20} color={COLORS.primary} />
+//             <Text style={styles.infoText}>
+//               Your location is being shared. You'll receive ride requests nearby.
+//             </Text>
+//           </View>
+//         )}
+//       </View>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: COLORS.background,
+//   },
+//   loadingContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     backgroundColor: COLORS.background,
+//   },
+//   loadingText: {
+//     marginTop: 16,
+//     fontSize: 16,
+//     color: COLORS.textPrimary,
+//   },
+//   errorContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     backgroundColor: COLORS.background,
+//     padding: 20,
+//   },
+//   errorText: {
+//     marginTop: 16,
+//     fontSize: 16,
+//     color: COLORS.textPrimary,
+//     textAlign: 'center',
+//   },
+//   retryButton: {
+//     marginTop: 20,
+//     paddingHorizontal: 30,
+//     paddingVertical: 12,
+//     backgroundColor: COLORS.primary,
+//     borderRadius: 8,
+//   },
+//   retryButtonText: {
+//     color: '#fff',
+//     fontSize: 16,
+//     fontWeight: '600',
+//   },
+//   map: {
+//     flex: 1,
+//     width: '100%',
+//   },
+//   profileButton: {
+//     position: 'absolute',
+//     top: Platform.OS === 'ios' ? 60 : 40,
+//     right: 20,
+//     zIndex: 10,
+//   },
+//   avatar: {
+//     width: 50,
+//     height: 50,
+//     borderRadius: 25,
+//     backgroundColor: COLORS.primary,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.25,
+//     shadowRadius: 3.84,
+//     elevation: 5,
+//   },
+//   avatarText: {
+//     color: '#fff',
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//   },
+//   myLocationButton: {
+//     position: 'absolute',
+//     top: Platform.OS === 'ios' ? 60 : 40,
+//     left: 20,
+//     width: 50,
+//     height: 50,
+//     borderRadius: 25,
+//     backgroundColor: '#fff',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.25,
+//     shadowRadius: 3.84,
+//     elevation: 5,
+//   },
+//   connectionStatus: {
+//     position: 'absolute',
+//     top: Platform.OS === 'ios' ? 120 : 100,
+//     left: 20,
+//     paddingHorizontal: 12,
+//     paddingVertical: 6,
+//     borderRadius: 20,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.25,
+//     shadowRadius: 3.84,
+//     elevation: 5,
+//   },
+//   connectionText: {
+//     color: '#fff',
+//     fontSize: 12,
+//     fontWeight: '600',
+//   },
+//   bottomCard: {
+//     position: 'absolute',
+//     bottom: 0,
+//     left: 0,
+//     right: 0,
+//     backgroundColor: '#fff',
+//     borderTopLeftRadius: 20,
+//     borderTopRightRadius: 20,
+//     padding: 20,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: -2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 3,
+//     elevation: 10,
+//   },
+//   statusRow: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'center',
+//   },
+//   statusTitle: {
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//     color: COLORS.textPrimary,
+//     marginBottom: 4,
+//   },
+//   statusText: {
+//     fontSize: 16,
+//   },
+//   infoBox: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     backgroundColor: COLORS.background,
+//     padding: 12,
+//     borderRadius: 8,
+//     marginTop: 16,
+//   },
+//   infoText: {
+//     flex: 1,
+//     marginLeft: 8,
+//     fontSize: 14,
+//     color: COLORS.textSecondary,
+//   },
+//   driverMarker: {
+//     backgroundColor: COLORS.primary,
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     borderWidth: 3,
+//     borderColor: '#fff',
+//   },
+// });
+
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
   Platform,
-  ScrollView,
+  Switch,
 } from 'react-native';
+import { SafeMapView, SafeMarker } from '../../src/components/SafeMapView.tsx';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../src/constants/config';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { COLORS } from '../../src/constants/colors';
 import { useAuth } from '../../src/context/AuthContext';
+import { useWebSocket } from '../../src/context/WebSocketContext';
 
-type LocationType = {
+type Region = {
   latitude: number;
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
-} | null;
-
-type RideRequest = {
-  id: number;
-  passenger_name: string;
-  pickup_location: string;
-  dropoff_location: string;
-  distance: string;
-  estimated_price: number;
-  created_at: string;
-};
-
-type WebSocketRideData = {
-  ride_id: number;
-  passenger_name: string;
-  pickup_location: string;
-  dropoff_location: string;
-  distance: string;
-  estimated_price: number;
-  type: string;
 };
 
 export default function DriverHome() {
   const { user } = useAuth();
-  const { isConnected, subscribe } = useWebSocket();
-  const [location, setLocation] = useState<LocationType>(null);
+  const { isConnected, sendMessage } = useWebSocket();
+  const router = useRouter();
+  const mapRef = useRef(null);
+
+  const [location, setLocation] = useState<Region | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
-  const [rideRequests, setRideRequests] = useState<RideRequest[]>([]);
+  const [profileComplete, setProfileComplete] = useState(false);
 
   useEffect(() => {
-    getCurrentLocation();
-    // TODO: Fetch ride requests from API
-    loadMockRideRequests();
+    requestLocationPermission();
+    checkProfileCompletion();
   }, []);
-   
-  useEffect(() => {
-    // Subscribe to ride request events
-    const unsubscribeRideRequest = subscribe('ride_request', (data: any) => {
-      console.log('New ride request:', data);
-      
-      const newRequest: RideRequest = {
-        id: data.ride_id || Date.now(),
-        passenger_name: data.passenger_name || 'Unknown',
-        pickup_location: data.pickup_address || 'Unknown location',  // ✅ Changed from pickup_location
-        dropoff_location: data.dropoff_address || 'Unknown destination',  // ✅ Changed from dropoff_location
-        distance: data.estimated_distance || 'N/A',
-        estimated_price: data.fare || 0,  // ✅ Changed from estimated_price
-        created_at: 'Just now',
-      };
-      
-      setRideRequests(prev => [newRequest, ...prev]);
-      
-      Alert.alert(
-        'New Ride Request! 🚗',
-        `${newRequest.passenger_name} needs a ride`,
-        [{ text: 'OK' }]
-      );
-    });
-  
-    // Subscribe to ride cancellation
-    const unsubscribeRideCancel = subscribe('ride_cancelled', (data: any) => {
-      console.log('Ride cancelled:', data);
-      setRideRequests(prev => prev.filter(r => r.id !== data.ride_id));
-    });
-  
-    return () => {
-      unsubscribeRideRequest();
-      unsubscribeRideCancel();
-    };
-  }, [subscribe]);
 
-  const getCurrentLocation = async () => {
+  // Re-check profile when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('📱 Driver home focused - checking profile');
+      checkProfileCompletion();
+    }, [])
+  );
+
+  // Check if driver profile is complete
+  const checkProfileCompletion = async () => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      console.log('🔍 Checking profile completion...');
+      
+      const response = await fetch(`${API_URL}/api/auth/driver/profile/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('📥 Profile check status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📥 Profile data:', data);
+        
+        // Check if all required fields are filled
+        const isComplete = !!(
+          data.license_number &&
+          data.vehicle_type &&
+          data.vehicle_model &&
+          data.vehicle_number &&
+          data.vehicle_color
+        );
+
+        console.log('✅ Profile complete:', isComplete);
+        setProfileComplete(isComplete);
+      } else {
+        console.error('❌ Failed to check profile');
+        setProfileComplete(false);
+      }
+    } catch (error) {
+      console.error('❌ Error checking profile:', error);
+      setProfileComplete(false);
+    }
+  };
+
+  // Send location updates when online
+  useEffect(() => {
+    if (isOnline && location && isConnected) {
+      const interval = setInterval(() => {
+        sendMessage({
+          type: 'location_update',
+          latitude: location.latitude,
+          longitude: location.longitude,
+        });
+        console.log('📍 Sent location update');
+      }, 5000); // Send every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isOnline, location, isConnected]);
+
+  const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required');
+        Alert.alert(
+          'Permission Denied',
+          'Location permission is required to use this app'
+        );
         setLoading(false);
         return;
       }
 
+      getCurrentLocation();
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      setLoading(false);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
 
-      setLocation({
+      const newLocation: Region = {
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      });
+      };
+
+      setLocation(newLocation);
+      setLoading(false);
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert('Error', 'Could not get your location');
-    } finally {
+      Alert.alert('Error', 'Could not get your current location');
       setLoading(false);
     }
   };
-  
 
-  const loadMockRideRequests = () => {
-    // Mock data - replace with API call later
-    const mockRequests: RideRequest[] = [
-      {
-        id: 1,
-        passenger_name: 'John Doe',
-        pickup_location: 'Amir Temur Square',
-        dropoff_location: 'Tashkent City',
-        distance: '5.2 km',
-        estimated_price: 25000,
-        created_at: '2 mins ago',
-      },
-      {
-        id: 2,
-        passenger_name: 'Sarah Smith',
-        pickup_location: 'Minor Mosque',
-        dropoff_location: 'Chorsu Bazaar',
-        distance: '3.8 km',
-        estimated_price: 18000,
-        created_at: '5 mins ago',
-      },
-    ];
-    setRideRequests(mockRequests);
+  const centerOnMyLocation = async () => {
+    try {
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const newLocation: Region = {
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+
+      setLocation(newLocation);
+      Alert.alert('Success', 'Location updated!');
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Could not get your current location');
+    }
   };
 
   const toggleOnlineStatus = () => {
+    console.log('🔄 Toggle pressed. Profile complete:', profileComplete);
+    
+    // Check if profile is complete
+    if (!profileComplete) {
+      Alert.alert(
+        'Complete Your Profile',
+        'Please fill in your vehicle information before going online',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => router.push('/(driver)/complete-profile'),
+          },
+        ]
+      );
+      return;
+    }
+
     setIsOnline(!isOnline);
     Alert.alert(
       isOnline ? 'Going Offline' : 'Going Online',
       isOnline 
-        ? 'You will stop receiving ride requests' 
+        ? 'You will stop receiving ride requests'
         : 'You will start receiving ride requests'
     );
   };
 
-  const handleAcceptRide = (rideId: number) => {
-    Alert.alert(
-      'Accept Ride',
-      'Do you want to accept this ride request?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
-          onPress: () => {
-            // TODO: Call API to accept ride
-            setRideRequests(prev => prev.filter(r => r.id !== rideId));
-            Alert.alert('Success', 'Ride accepted! Navigate to pickup location.');
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDeclineRide = (rideId: number) => {
-    setRideRequests(prev => prev.filter(r => r.id !== rideId));
-  };
-
-  const simulateRideRequest = () => {
-    const mockRequest: RideRequest = {
-      id: Date.now(),
-      passenger_name: 'Test Passenger',
-      pickup_location: 'Test Pickup Location',
-      dropoff_location: 'Test Destination',
-      distance: '4.5 km',
-      estimated_price: 20000,
-      created_at: 'Just now',
-    };
-
-    setRideRequests(prev => [mockRequest, ...prev]);
-    Alert.alert('Test', 'Simulated ride request added!');
+  const handleProfilePress = () => {
+    router.push('/(driver)/profile');
   };
 
   if (loading) {
@@ -217,176 +683,95 @@ export default function DriverHome() {
 
   return (
     <View style={styles.container}>
-      {/* Map Placeholder */}
-      <View style={styles.mapPlaceholder}>
-        <Ionicons name="car-sport" size={64} color={COLORS.primary} />
-        <Text style={styles.mapPlaceholderTitle}>Driver Mode Active</Text>
-        <Text style={styles.mapPlaceholderText}>
-          Lat: {location.latitude.toFixed(6)}
-        </Text>
-        <Text style={styles.mapPlaceholderText}>
-          Lng: {location.longitude.toFixed(6)}
-        </Text>
-      </View>
-
-      {/* Top Card - Driver Status */}
-      <View style={styles.topCard}>
-        <View style={styles.statusHeader}>
-          <View style={styles.driverInfo}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.first_name?.[0]?.toUpperCase() || 'D'}
-              </Text>
-            </View>
-            <View>
-              <Text style={styles.driverName}>
-                {user?.first_name} {user?.last_name}
-              </Text>
-              <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={16} color={COLORS.primary} />
-                <Text style={styles.ratingText}>4.8 (127 rides)</Text>
-              </View>
-            </View>
+      {/* Map */}
+      <SafeMapView location={location} mapRef={mapRef}>
+        {/* Driver's current location marker */}
+        <SafeMarker
+          coordinate={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }}
+          title="You are here"
+          description="Your current location"
+        >
+          <View style={styles.driverMarker}>
+            <Ionicons name="car" size={24} color="#fff" />
           </View>
+        </SafeMarker>
+      </SafeMapView>
 
-          {/* Online/Offline Toggle */}
-          <TouchableOpacity
-            style={[styles.statusButton, isOnline && styles.statusButtonOnline]}
-            onPress={toggleOnlineStatus}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.statusDot, isOnline && styles.statusDotOnline]} />
-            <Text style={[styles.statusButtonText, isOnline && styles.statusButtonTextOnline]}>
-              {isOnline ? 'Online' : 'Offline'}
-            </Text>
-          </TouchableOpacity>
-
-          {isConnected && (
-            <View style={styles.wsIndicator}>
-              <View style={styles.wsDot} />
-              <Text style={styles.wsText}>Live</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Bottom Card - Ride Requests */}
-      <View style={styles.bottomCard}>
-        <View style={styles.cardHeader}>
-
-          <Text style={styles.cardTitle}>
-            {isOnline ? 'Ride Requests' : 'Go online to receive requests'}
+      {/* Profile Button */}
+      <TouchableOpacity
+        style={styles.profileButton}
+        onPress={handleProfilePress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {user?.first_name?.[0]?.toUpperCase() || '?'}
           </Text>
-          {rideRequests.length > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{rideRequests.length}</Text>
-            </View>
-          )}
         </View>
-        {__DEV__ && (
-          <TouchableOpacity 
-            style={styles.testButton}
-            onPress={simulateRideRequest}
-          >
-            <Text style={styles.testButtonText}>🧪 Test Ride Request</Text>
-          </TouchableOpacity>
+      </TouchableOpacity>
+
+      {/* My Location Button */}
+      <TouchableOpacity
+        style={styles.myLocationButton}
+        onPress={centerOnMyLocation}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="locate" size={24} color={COLORS.primary} />
+      </TouchableOpacity>
+
+      {/* WebSocket Connection Status */}
+      <View style={[styles.connectionStatus, {
+        backgroundColor: isConnected ? COLORS.success : COLORS.error
+      }]}>
+        <Text style={styles.connectionText}>
+          {isConnected ? '● Connected' : '● Offline'}
+        </Text>
+      </View>
+
+      {/* Bottom Card */}
+      <View style={styles.bottomCard}>
+        <View style={styles.statusRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.statusTitle}>Driver Status</Text>
+            <Text style={[styles.statusText, {
+              color: isOnline ? COLORS.success : COLORS.textSecondary
+            }]}>
+              {isOnline ? '🟢 Online - Ready for rides' : '⚫ Offline'}
+            </Text>
+          </View>
+          <Switch
+            value={isOnline}
+            onValueChange={toggleOnlineStatus}
+            trackColor={{ false: COLORS.textSecondary, true: COLORS.success }}
+            thumbColor={COLORS.background}
+          />
+        </View>
+
+        {isOnline && (
+          <View style={styles.infoBox}>
+            <Ionicons name="information-circle" size={20} color={COLORS.primary} />
+            <Text style={styles.infoText}>
+              Your location is being shared. You'll receive ride requests nearby.
+            </Text>
+          </View>
         )}
-        {!isOnline ? (
-          <View style={styles.offlineContainer}>
-            <Ionicons name="moon-outline" size={48} color={COLORS.textSecondary} />
-            <Text style={styles.offlineText}>
-              You're currently offline
-            </Text>
-            <Text style={styles.offlineSubtext}>
-              Turn on to start receiving ride requests
-            </Text>
-          </View>
-        ) : rideRequests.length === 0 ? (
-          <View style={styles.noRequestsContainer}>
-            <Ionicons name="time-outline" size={48} color={COLORS.textSecondary} />
-            <Text style={styles.noRequestsText}>
-              Waiting for ride requests...
-            </Text>
-            <Text style={styles.noRequestsSubtext}>
-              You'll be notified when passengers request rides nearby
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            style={styles.requestsList}
-            showsVerticalScrollIndicator={false}
+
+        {/* Show profile incomplete warning */}
+        {!profileComplete && (
+          <TouchableOpacity 
+            style={styles.warningBox}
+            onPress={() => router.push('/(driver)/complete-profile')}
+            activeOpacity={0.7}
           >
-            {rideRequests.map((request) => (
-              <View key={request.id} style={styles.requestCard}>
-                {/* Request Header */}
-                <View style={styles.requestHeader}>
-                  <View style={styles.passengerInfo}>
-                    <View style={styles.passengerAvatar}>
-                      <Text style={styles.passengerAvatarText}>
-                        {request.passenger_name[0]}
-                      </Text>
-                    </View>
-                    <View>
-                      <Text style={styles.passengerName}>
-                        {request.passenger_name}
-                      </Text>
-                      <Text style={styles.requestTime}>{request.created_at}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.priceContainer}>
-                    <Text style={styles.priceLabel}>Fare</Text>
-                    <Text style={styles.price}>
-                      {request.estimated_price.toLocaleString()} UZS
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Route Info */}
-                <View style={styles.routeContainer}>
-                  <View style={styles.routeRow}>
-                    <View style={styles.pickupDot} />
-                    <Text style={styles.locationText} numberOfLines={1}>
-                      {request.pickup_location}
-                    </Text>
-                  </View>
-                  <View style={styles.routeLine} />
-                  <View style={styles.routeRow}>
-                    <View style={styles.dropoffDot} />
-                    <Text style={styles.locationText} numberOfLines={1}>
-                      {request.dropoff_location}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Distance */}
-                <View style={styles.distanceContainer}>
-                  <Ionicons name="navigate" size={16} color={COLORS.textSecondary} />
-                  <Text style={styles.distanceText}>{request.distance}</Text>
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={styles.declineButton}
-                    onPress={() => handleDeclineRide(request.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="close" size={24} color={COLORS.error} />
-                    <Text style={styles.declineButtonText}>Decline</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.acceptButton}
-                    onPress={() => handleAcceptRide(request.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="checkmark" size={24} color={COLORS.textPrimary} />
-                    <Text style={styles.acceptButtonText}>Accept</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+            <Ionicons name="warning" size={20} color={COLORS.warning} />
+            <Text style={styles.warningText}>
+              Complete your profile to go online
+            </Text>
+            <Ionicons name="arrow-forward" size={20} color={COLORS.warning} />
+          </TouchableOpacity>
         )}
       </View>
     </View>
@@ -407,74 +792,38 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: COLORS.textPrimary,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.background,
-    padding: 24,
+    padding: 20,
   },
   errorText: {
-    fontSize: 18,
-    color: COLORS.textSecondary,
     marginTop: 16,
-    marginBottom: 24,
+    fontSize: 16,
+    color: COLORS.textPrimary,
     textAlign: 'center',
   },
   retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   retryButtonText: {
-    color: COLORS.textPrimary,
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-  mapPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.backgroundLight,
-    padding: 24,
-  },
-  mapPlaceholderTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginTop: 16,
-  },
-  mapPlaceholderText: {
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    marginTop: 8,
-  },
-  topCard: {
+  profileButton: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
-    left: 20,
     right: 20,
-    backgroundColor: COLORS.background,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  driverInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    zIndex: 10,
   },
   avatar: {
     width: 50,
@@ -483,304 +832,117 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   avatarText: {
-    fontSize: 24,
+    color: '#fff',
+    fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
-  driverName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
+  myLocationButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  ratingText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginLeft: 4,
-  },
-  statusButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.backgroundLight,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+  connectionStatus: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 120 : 100,
+    left: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  statusButtonOnline: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.textSecondary,
-    marginRight: 8,
-  },
-  statusDotOnline: {
-    backgroundColor: COLORS.success,
-  },
-  statusButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.textSecondary,
-  },
-  statusButtonTextOnline: {
-    color: COLORS.textPrimary,
+  connectionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   bottomCard: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: COLORS.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 24,
-    paddingHorizontal: 24,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 12,
-    maxHeight: '50%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 10,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
-  badge: {
-    backgroundColor: COLORS.primary,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  offlineContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  offlineText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginTop: 16,
-  },
-  offlineSubtext: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  noRequestsContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  noRequestsText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginTop: 16,
-  },
-  noRequestsSubtext: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  requestsList: {
-    flex: 1,
-  },
-  requestCard: {
-    backgroundColor: COLORS.backgroundLight,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-  },
-  requestHeader: {
+  statusRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  passengerInfo: {
+  statusTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  statusText: {
+    fontSize: 16,
+  },
+  infoBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    backgroundColor: COLORS.background,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
   },
-  passengerAvatar: {
+  infoText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.warning + '20',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  warningText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: COLORS.warning,
+    fontWeight: '600',
+  },
+  driverMarker: {
+    backgroundColor: COLORS.primary,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  passengerAvatarText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  passengerName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  requestTime: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  priceContainer: {
-    alignItems: 'flex-end',
-  },
-  priceLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
-  routeContainer: {
-    marginVertical: 16,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  pickupDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.success,
-    marginRight: 12,
-  },
-  dropoffDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.error,
-    marginRight: 12,
-  },
-  routeLine: {
-    width: 2,
-    height: 20,
-    backgroundColor: COLORS.border,
-    marginLeft: 6,
-    marginVertical: 4,
-  },
-  locationText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: '500',
-  },
-  distanceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  distanceText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginLeft: 8,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  declineButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.backgroundLight,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.error,
-  },
-  declineButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.error,
-    marginLeft: 8,
-  },
-  acceptButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  acceptButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginLeft: 8,
-  },
-  wsIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.success,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginLeft: 8,
-  },
-  wsDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.background,
-    marginRight: 6,
-  },
-  wsText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: COLORS.background,
-  },
-  testButton: {
-    backgroundColor: COLORS.info,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  testButtonText: {
-    color: COLORS.background,
-    fontSize: 14,
-    fontWeight: 'bold',
+    borderWidth: 3,
+    borderColor: '#fff',
   },
 });
