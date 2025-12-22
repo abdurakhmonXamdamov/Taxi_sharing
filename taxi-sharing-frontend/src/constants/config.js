@@ -2,6 +2,8 @@
 export const API_URL = 'https://taxisharing.up.railway.app';
 export const WS_URL = 'wss://taxisharing.up.railway.app';
 
+export const WEBSOCKET_ENABLED = true;
+
 // API Endpoints
 export const ENDPOINTS = {
   // Auth
