@@ -2,15 +2,14 @@ from django.urls import path
 from .views import (
     RegisterView, LoginView, UserProfileView,
     DriverProfileView, DriverLocationUpdateView, CompleteDriverProfileView,
-    NearbyDriversView, DriverCurrentLocationView, PassengerProfileView
+    NearbyDriversView, DriverCurrentLocationView, PassengerProfileView, UpdateLocationView
 )
 
 urlpatterns = [
     # Authentication
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
-  
-    
+    path("update-location/", UpdateLocationView.as_view(), name='update-location'),   
     
     # Profile
     path('profile/', UserProfileView.as_view(), name='user-profile'),

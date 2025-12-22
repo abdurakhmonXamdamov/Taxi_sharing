@@ -39,7 +39,6 @@ class User(AbstractUser):
         help_text="When location was last updated"
     )
     
-    # ✅ PERMISSION FLAGS
     location_permission_granted = models.BooleanField(
         default=False,
         help_text="Has user granted location permission"
@@ -85,14 +84,14 @@ class Driver(models.Model):
     
   @property
   def is_profile_complete(self):
-    """Check if driver completed their profile"""
-    return bool(
-        self.license_number and
-        self.vehicle_type and
-        self.vehicle_model and
-        self.vehicle_number and
-        self.vehicle_color
-    )
+    """Check if all required fields are filled"""
+    return all([
+          self.license_number,
+          self.vehicle_type,
+          self.vehicle_model,
+          self.vehicle_number,
+          self.vehicle_color,
+        ])
   
   @property
   def missing_fields(self):

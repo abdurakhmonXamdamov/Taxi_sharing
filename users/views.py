@@ -99,7 +99,6 @@ class UserProfileView(APIView):
         return Response(serializer.data)
 
 
-# ✅ NEW: Update user location endpoint
 class UpdateLocationView(APIView):
     """Update user's current location (for both passengers and drivers)"""
     permission_classes = [permissions.IsAuthenticated]
@@ -211,32 +210,31 @@ class CompleteDriverProfileView(APIView):
         request=DriverProfileCompleteSerializer,
         responses={200: DriverSerializer},
         description="Complete driver profile with all required vehicle information",
-        examples=[
-            OpenApiExample(
-                'Complete Profile Example',
-                value={
-                    "license_number": "AA1234567",
-                    "vehicle_type": "Sedan",
-                    "vehicle_model": "Chevrolet Nexia",
-                    "vehicle_number": "01 A 234 BC",
-                    "vehicle_color": "White"
-                },
-                request_only=True,
-            )
-        ]
     )
     def post(self, request):
+        print(f"🔵 CompleteDriverProfile called by user: {request.user.username}")
+        print(f"🔵 User type: {request.user.user_type}")
+        
         if request.user.user_type != 'driver':
+            print("❌ User is not a driver")
             return Response(
                 {'error': 'Only drivers can complete profile'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         try:
-            driver = request.user.driver_profile
+            # ✅ Get or create driver profile (FIX: might not exist!)
+            from .models import DriverProfile
+            driver, created = DriverProfile.objects.get_or_create(user=request.user)
+            
+            if created:
+                print(f"✅ Created new driver profile for {request.user.username}")
+            else:
+                print(f"✅ Found existing driver profile for {request.user.username}")
             
             # Check if already complete
-            if driver.is_profile_complete:
+            if driver.is_profile_complete and not created:
+                print("⚠️ Profile already complete")
                 return Response(
                     {
                         'message': 'Profile already complete',
@@ -246,8 +244,15 @@ class CompleteDriverProfileView(APIView):
                 )
             
             # Validate input
+            print(f"📝 Validating data: {request.data}")
             serializer = DriverProfileCompleteSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            
+            if not serializer.is_valid():
+                print(f"❌ Validation failed: {serializer.errors}")
+                return Response(
+                    {'error': 'Invalid data', 'details': serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
             # Update driver profile
             driver.license_number = serializer.validated_data['license_number']
@@ -257,15 +262,21 @@ class CompleteDriverProfileView(APIView):
             driver.vehicle_color = serializer.validated_data['vehicle_color']
             driver.save()
             
+            print(f"✅ Profile saved successfully for {request.user.username}")
+            
             return Response({
+                'status': 'success',
                 'message': 'Profile completed successfully! You can now go online.',
                 'profile': DriverSerializer(driver).data
             }, status=status.HTTP_200_OK)
             
-        except Driver.DoesNotExist:
+        except Exception as e:
+            print(f"❌ Unexpected error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
-                {'error': 'Driver profile not found'}, 
-                status=status.HTTP_404_NOT_FOUND
+                {'error': f'Server error: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
@@ -383,7 +394,7 @@ class DriverLocationUpdateView(APIView):
                 }
             )
             
-            print(f"📍 Broadcasted location for driver {driver_profile.user.username}")
+            print(f"Broadcasted location for driver {driver_profile.user.username}")
             
         except Exception as e:
             print(f"❌ Error broadcasting location: {e}")
