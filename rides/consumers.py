@@ -1,6 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.utils import timezone
 
 class LocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -26,7 +27,6 @@ class LocationConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-    
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
             await self.channel_layer.group_discard(
@@ -68,6 +68,43 @@ class LocationConsumer(AsyncWebsocketConsumer):
                 'message': str(e)
             }))
     
+    async def handle_location_update(self, data):
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+
+        if latitude is None or longitude is None:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Latitude and longitude are required'
+            }))
+            return
+
+        # Save to database
+        await self.save_user_location(latitude, longitude)
+
+        # Broadcast to others (optional)
+        await self.channel_layer.group_send(
+            self.location_room,
+            {
+                'type': 'location_broadcast',
+                'driver_id': self.user.id,
+                'latitude': latitude,
+                'longitude': longitude,
+            }
+        )
+
+    @database_sync_to_async
+    def save_user_location(self, latitude, longitude):
+        user = self.user
+        user.current_latitude = latitude
+        user.current_longitude = longitude
+        user.location_updated_at = timezone.now()
+        user.save(update_fields=[
+            'current_latitude',
+            'current_longitude',
+            'location_updated_at'
+        ])
+
     # Handle new ride notifications (sent to drivers)
     async def new_ride_notification(self, event):
         """Send new ride notification to driver"""
