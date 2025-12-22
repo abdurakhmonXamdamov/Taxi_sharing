@@ -98,7 +98,6 @@ class UserProfileView(APIView):
         serializer.save()
         return Response(serializer.data)
 
-
 class UpdateLocationView(APIView):
     """Update user's current location (for both passengers and drivers)"""
     permission_classes = [permissions.IsAuthenticated]
@@ -134,44 +133,67 @@ class UpdateLocationView(APIView):
             )
         ]
     )
-
     def post(self, request):
         user = request.user
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
         
+        print(f"📍 Location update request from {user.username} ({user.user_type})")
+        print(f"   Latitude: {latitude}, Longitude: {longitude}")
+        
         if not latitude or not longitude:
+            print(f"   ❌ Missing coordinates")
             return Response({
                 'status': 'error',
                 'message': 'Latitude and longitude are required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
+            # ✅ Update user location
             user.current_latitude = latitude
             user.current_longitude = longitude
             user.location_updated_at = timezone.now()
             user.location_permission_granted = True
-            user.save()
+            user.save(update_fields=[
+                'current_latitude',
+                'current_longitude',
+                'location_updated_at',
+                'location_permission_granted'
+            ])
             
-            # If driver, also update driver profile
+            print(f"   ✅ User location saved")
+            
+            # ✅ If driver, also update driver profile AND broadcast
             if user.user_type == 'driver':
                 try:
                     driver_profile = user.driver_profile
                     driver_profile.current_latitude = latitude
                     driver_profile.current_longitude = longitude
-                    driver_profile.save()
-                    print(f"📍 Updated driver {user.username} location: {latitude}, {longitude}")
+                    driver_profile.save(update_fields=[
+                        'current_latitude',
+                        'current_longitude'
+                    ])
+                    print(f"   ✅ Driver profile location saved")
+                    
+                    # ✅ FIX: Actually call broadcast!
+                    self.broadcast_driver_location(driver_profile)
+                    
                 except Exception as e:
-                    print(f"⚠️ Could not update driver profile: {e}")
+                    print(f"   ⚠️ Could not update driver profile: {e}")
+            else:
+                print(f"   ✅ Passenger location saved")
             
+            # ✅ FIX: Include updated_at in response
             return Response({
                 'status': 'success',
                 'message': 'Location updated',
                 'latitude': float(latitude),
                 'longitude': float(longitude),
+                'updated_at': user.location_updated_at.isoformat()
             })
             
         except Exception as e:
+            print(f"   ❌ Error: {e}")
             return Response({
                 'status': 'error',
                 'message': str(e)
@@ -186,18 +208,19 @@ class UpdateLocationView(APIView):
                 'location_updates',
                 {
                     'type': 'location_broadcast',
-                    'driver_id': driver_profile.user.id,
+                    'user_id': driver_profile.user.id,  # ✅ FIX: Consistent naming
+                    'username': driver_profile.user.username,
+                    'user_type': 'driver',
                     'latitude': str(driver_profile.current_latitude),
                     'longitude': str(driver_profile.current_longitude),
                     'status': driver_profile.status,
                 }
             )
             
-            print(f"📍 Broadcasted location for driver {driver_profile.user.username}")
+            print(f"   📡 Broadcasted location for driver {driver_profile.user.username}")
             
         except Exception as e:
-            print(f"❌ Error broadcasting location: {e}")
-
+            print(f"   ❌ Error broadcasting location: {e}")
 
 class CompleteDriverProfileView(APIView):
     """Complete driver profile - first time setup"""
